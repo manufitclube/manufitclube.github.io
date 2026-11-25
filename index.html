@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ManuFit Clube — Treino, Dieta & Evolução</title>
+
+  <!-- Fontes: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons & Chart.js -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Tokens de design para Modo Claro Clean e Modo Escuro Confortável */
+    :root {
+      --bg-page: #F4F6F9;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #EDF1F7;
+      --bg-nav: rgba(255, 255, 255, 0.94);
+      --border-card: #E2E8F0;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+    }
+    html.dark {
+      --bg-page: #111418;
+      --bg-card: #191E24;
+      --bg-subtle: #14181D;
+      --bg-nav: rgba(20, 24, 29, 0.94);
+      --border-card: #28303B;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.22s ease, color 0.22s ease;
+    }
+    .font-display {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    }
+    .card-surface {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-card);
+      transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    html:not(.dark) .card-surface {
+      box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.06);
+    }
+    .surface-subtle {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+    }
+    .nav-blur {
+      background-color: var(--bg-nav);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .progress-bar-fill {
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tab-fade {
+      animation: fadeSlide 0.2s ease-out;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Scrollbar discreta */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-emerald-500/30 overflow-x-hidden">
+
+  <!-- Container de Notificações Toast -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+  <!-- Modal Customizado (sem alert/confirm) -->
+  <div id="custom-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="card-surface rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <h3 id="modal-title" class="font-display text-lg font-bold">Modal</h3>
+        <button onclick="MF.closeModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-200/60 dark:hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modal-body" class="text-sm"></div>
+      <div id="modal-actions" class="flex justify-end gap-2 mt-6"></div>
+    </div>
+  </div>
+
+  <!-- App Shell -->
+  <div class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- SIDEBAR DESKTOP -->
+    <aside class="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white dark:bg-[#14181D] border-r border-slate-200 dark:border-[#28303B] z-30 transition-colors">
+      <div class="p-5 border-b border-slate-200 dark:border-[#28303B]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <i data-lucide="flame" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-display font-extrabold text-base tracking-tight leading-tight">ManuFit Clube</h1>
+            <p class="text-[11px] font-semibold text-emerald-500">Treino, Dieta & Evolução</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="flex-1 p-3.5 space-y-1.5" id="desktop-nav"></nav>
+
+      <div class="p-4 m-3.5 rounded-2xl surface-subtle space-y-2.5">
+        <button onclick="MF.openProfileModal('create')" class="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> + Criar Perfil
+        </button>
+        <button onclick="MF.toggleTheme()" id="sidebar-theme-btn" class="w-full py-2 px-3 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="sun" class="w-3.5 h-3.5"></i> Modo Claro
+        </button>
+      </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+
+      <!-- TOP BAR LIMPA E INTUITIVA -->
+      <header class="sticky top-0 z-30 nav-blur border-b border-slate-200 dark:border-[#28303B] px-3.5 sm:px-6 py-2.5 transition-colors">
+        <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <!-- Logo compacta no mobile + Seletor de Perfil -->
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="md:hidden w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-sm" title="ManuFit Clube">
+              <i data-lucide="flame" class="w-4 h-4 text-white"></i>
+            </div>
+            <div id="profile-avatar-dot" class="hidden sm:flex w-8 h-8 rounded-full items-center justify-center font-display font-bold text-xs text-white shrink-0 shadow-sm"></div>
+            <div class="relative flex-1 max-w-[165px] sm:max-w-[210px] min-w-0">
+              <select id="profile-selector" onchange="MF.selectProfile(this.value)"
+                class="w-full appearance-none bg-white dark:bg-[#191E24] border border-slate-200 dark:border-[#28303B] hover:border-cyan-500/60 rounded-xl pl-3 pr-8 py-2 text-xs sm:text-sm font-bold focus:outline-none focus:border-cyan-500 truncate cursor-pointer transition">
+              </select>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+            <button onclick="MF.openProfileModal('edit')" title="Editar perfil atual"
+              class="p-2 rounded-xl bg-white dark:bg-[#191E24] border border-slate-200 dark:border-[#28303B] text-slate-500 dark:text-slate-300 hover:text-cyan-500 transition shrink-0">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Ações do Topo: + Criar Perfil & Tema -->
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button onclick="MF.openProfileModal('create')"
+              class="px-3 sm:px-3.5 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/20 transition whitespace-nowrap">
+              <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[3]"></i>
+              <span>Criar Perfil</span>
+            </button>
+            <button onclick="MF.toggleTheme()" id="topbar-theme-btn" title="Alternar tema Claro/Escuro"
+              class="p-2 rounded-xl bg-white dark:bg-[#191E24] border border-slate-200 dark:border-[#28303B] text-slate-600 dark:text-amber-300 hover:border-cyan-500/50 transition shrink-0">
+              <i data-lucide="sun" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTEÚDO DINÂMICO DAS ABAS -->
+      <main class="flex-1 pb-28 md:pb-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
+          <div id="app-content" class="tab-fade"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- BARRA DE NAVEGAÇÃO INFERIOR MOBILE -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 nav-blur border-t border-slate-200 dark:border-[#28303B] px-2 py-2 transition-colors">
+      <div class="grid grid-cols-5 gap-1 max-w-md mx-auto" id="mobile-nav"></div>
+    </nav>
+  </div>
+
+  <!-- Input oculto para importar JSON -->
+  <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="MF.handleImportFile(event)" />
+
+  <script>
+    /* ==========================================================================
+       1. CONSTANTES, CATEGORIAS E UTILITÁRIOS
+       ========================================================================== */
+    const STORAGE_KEY = 'manufit_clube_v3';
+    const THEME_KEY = 'manufit_clube_theme_v3';
+
+    const DAY_KEYS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+    const DAY_LABELS = {
+      seg: { short: 'Seg', full: 'Segunda-feira' },
+      ter: { short: 'Ter', full: 'Terça-feira' },
+      qua: { short: 'Qua', full: 'Quarta-feira' },
+      qui: { short: 'Qui', full: 'Quinta-feira' },
+      sex: { short: 'Sex', full: 'Sexta-feira' },
+      sab: { short: 'Sáb', full: 'Sábado' },
+      dom: { short: 'Dom', full: 'Domingo' }
+    };
+
+    const SUBTYPES_BY_CATEGORY = {
+      rest: [{ id: 'Descanso', label: 'Recuperação muscular' }],
+      workout: [
+        { id: 'Musculação', label: 'Musculação' },
+        { id: 'Exercícios em Casa', label: 'Exercícios em Casa' }
+      ],
+      sport: [
+        { id: 'Vôlei', label: 'Vôlei' },
+        { id: 'Caminhada', label: 'Caminhada' },
+        { id: 'Corrida', label: 'Corrida' },
+        { id: 'Tênis', label: 'Tênis' },
+        { id: 'Natação', label: 'Natação' }
+      ]
+    };
+
+    const NAV_ITEMS = [
+      { id: 'dashboard', label: 'Início', icon: 'layout-dashboard' },
+      { id: 'workouts', label: 'Treinos', icon: 'dumbbell' },
+      { id: 'evolution', label: 'Evolução', icon: 'trending-up' },
+      { id: 'diet', label: 'Dieta', icon: 'utensils' },
+      { id: 'squad', label: 'Galera', icon: 'users' }
+    ];
+
+    const AVATAR_COLORS = [
+      { id: 'emerald', label: 'Verde', bg: 'bg-emerald-500' },
+      { id: 'blue', label: 'Azul', bg: 'bg-blue-500' },
+      { id: 'purple', label: 'Roxo', bg: 'bg-purple-500' },
+      { id: 'amber', label: 'Âmbar', bg: 'bg-amber-500' },
+      { id: 'rose', label: 'Rosa', bg: 'bg-rose-500' },
+      { id: 'cyan', label: 'Ciano', bg: 'bg-cyan-500' }
+    ];
+
+    function getTodayISO() {
+      const now = new Date();
+      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+      return local.toISOString().split('T')[0];
+    }
+
+    function getOffsetDateISO(daysAgo) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().split('T')[0];
+    }
+
+    function getTodayDayKey() {
+      const map = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+      return map[new Date().getDay()];
+    }
+
+    function formatDateBR(iso) {
+      if (!iso) return '';
+      const [y, m, d] = iso.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function formatShortBR(iso) {
+      if (!iso) return '';
+      const [, m, d] = iso.split('-');
+      return `${d}/${m}`;
+    }
+
+    function getWeekStartISO(iso) {
+      const [y, m, d] = iso.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      const day = date.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      date.setDate(date.getDate() + diff);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function getCurrentWeekRangeBR() {
+      const startISO = getWeekStartISO(getTodayISO());
+      const [y, m, d] = startISO.split('-').map(Number);
+      const endDate = new Date(y, m - 1, d);
+      endDate.setDate(endDate.getDate() + 6);
+      const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+      return `${formatShortBR(startISO)} a ${formatShortBR(endISO)}`;
+    }
+
+    // Ícones SVG específicos e bem reconhecíveis para cada modalidade e esporte
+    function getActivitySvg(category, subtype, sizeClass = 'w-4 h-4') {
+      if (category === 'rest') {
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+      }
+      if (category === 'workout') {
+        if (subtype === 'Exercícios em Casa') {
+          return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 14h6"/><path d="M10.5 12v4"/><path d="M13.5 12v4"/></svg>`;
+        }
+        // Musculação (haltere)
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>`;
+      }
+      // Esportes específicos
+      if (subtype === 'Vôlei') {
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2.6 9c4.5 1.2 8.8 1.2 13.4-1.5"/><path d="M6.5 20.5c1.5-4.2 5-7.3 9.5-8.5"/><path d="M12 12c3.2 1.8 6.5 2.5 9.8 1.8"/></svg>`;
+      }
+      if (subtype === 'Tênis') {
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="14.5" cy="8.5" rx="5.5" ry="6.5" transform="rotate(35 14.5 8.5)"/><path d="m10 14-6 6"/><path d="m6.5 17.5 2 2"/><path d="m12 6 5 4"/><path d="m11 10 4-5"/></svg>`;
+      }
+      if (subtype === 'Caminhada') {
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="m10 22 2-7 3 2v5"/><path d="m14 14-2-4-3 2-2 4"/><path d="m12 10 3-2 3 2"/></svg>`;
+      }
+      if (subtype === 'Corrida') {
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="4" r="2"/><path d="m4 17 5-1 2-5 3 2 4-3"/><path d="m11 11 4 4-2 6"/><path d="m8 11 3-3 4 1"/></svg>`;
+      }
+      if (subtype === 'Natação') {
+        return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="6" r="2"/><path d="m4 13 5-3 4 2 3-2"/><path d="M2 18c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><path d="M2 21c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/></svg>`;
+      }
+      return `<svg class="${sizeClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function parseNumeric(val) {
+      if (val === null || val === undefined || val === '') return 0;
+      const m = String(val).replace(',', '.').match(/\d+(\.\d+)?/);
+      return m ? parseFloat(m[0]) : 0;
+    }
+
+    // Mifflin-St Jeor para cálculo automático de TMB, Calorias e Proteína
+    function calculateNutritionTargets({ sex, age, height, weight, goal, hasSport }) {
+      const s = sex === 'F' ? -161 : 5;
+      const bmr = Math.round(10 * weight + 6.25 * height - 5 * age + s);
+      const factor = hasSport ? 1.52 : 1.45;
+      const tdee = Math.round(bmr * factor);
+      let kcalTarget = tdee;
+      if (goal === 'Hipertrofia') kcalTarget = Math.round((tdee + 250) / 10) * 10;
+      else if (goal === 'Emagrecimento') kcalTarget = Math.round((tdee - 350) / 10) * 10;
+      const proteinTarget = Math.round(weight * (goal === 'Emagrecimento' ? 2.0 : 1.9));
+      return { bmr, kcalTarget, proteinTarget };
+    }
+
+    // Regra de novo perfil: 7 dias como Treino -> Musculação com apenas 1 exercício de exemplo
+    function buildNewProfileSchedule(profileId) {
+      const schedule = {};
+      DAY_KEYS.forEach(dk => {
+        schedule[dk] = {
+          category: 'workout',
+          subtype: 'Musculação',
+          title: 'Treino de Musculação',
+          exercises: [
+            { id: `${profileId}_${dk}_ex1`, name: 'Supino reto', sets: 3, reps: '8-12' }
+          ]
+        };
+      });
+      return schedule;
+    }
+
+    /* ==========================================================================
+       2. PERFIS INICIAIS DE EXEMPLO (EMMANUEL, GABRIEL, GABRIELA)
+       ========================================================================== */
+    function getSeedProfiles() {
+      return [
+        // 1. EMMANUEL
+        {
+          id: 'prof_emmanuel',
+          name: 'Emmanuel',
+          initials: 'EM',
+          color: 'emerald',
+          age: 21,
+          height: 178,
+          sex: 'M',
+          startWeight: 77.0,
+          firstMilestone: 79.5,
+          targetWeight: 85.0,
+          goal: 'Hipertrofia',
+          location: 'Exercícios em Casa',
+          sportName: 'Vôlei',
+          bmr: 1780,
+          kcalTarget: 2670,
+          proteinTarget: 150,
+          schedule: {
+            seg: {
+              category: 'workout', subtype: 'Exercícios em Casa', title: 'Peito e Costas',
+              exercises: [
+                { id: 'em_seg_1', name: 'Barra fixa', sets: 3, reps: '4-8' },
+                { id: 'em_seg_2', name: 'Flexão', sets: 3, reps: '8-15' },
+                { id: 'em_seg_3', name: 'Remada unilateral com mochila', sets: 3, reps: '8-15' },
+                { id: 'em_seg_4', name: 'Elevação lateral com elástico', sets: 2, reps: '12-20' },
+                { id: 'em_seg_5', name: 'Rosca com elástico', sets: 2, reps: '10-20' }
+              ]
+            },
+            ter: {
+              category: 'workout', subtype: 'Exercícios em Casa', title: 'Pernas',
+              exercises: [
+                { id: 'em_ter_1', name: 'Agachamento com mochila', sets: 3, reps: '8-15' },
+                { id: 'em_ter_2', name: 'Afundo para trás', sets: 3, reps: '8-12' },
+                { id: 'em_ter_3', name: 'Terra romeno com mochila', sets: 3, reps: '8-15' },
+                { id: 'em_ter_4', name: 'Panturrilha em pé', sets: 3, reps: '12-20' },
+                { id: 'em_ter_5', name: 'Prancha', sets: 2, reps: '20-40s' }
+              ]
+            },
+            qua: {
+              category: 'workout', subtype: 'Exercícios em Casa', title: 'Costas, Peito e Ombros',
+              exercises: [
+                { id: 'em_qua_1', name: 'Barra fixa supinada', sets: 3, reps: '4-8' },
+                { id: 'em_qua_2', name: 'Flexão', sets: 3, reps: '8-15' },
+                { id: 'em_qua_3', name: 'Remada com elástico', sets: 3, reps: '10-20' },
+                { id: 'em_qua_4', name: 'Desenvolvimento com elástico', sets: 2, reps: '10-15' },
+                { id: 'em_qua_5', name: 'Extensão de tríceps com elástico', sets: 2, reps: '10-20' }
+              ]
+            },
+            qui: {
+              category: 'workout', subtype: 'Exercícios em Casa', title: 'Pernas e Abdômen',
+              exercises: [
+                { id: 'em_qui_1', name: 'Agachamento dividido com mochila', sets: 3, reps: '8-12' },
+                { id: 'em_qui_2', name: 'Ponte de glúteos com mochila', sets: 3, reps: '10-20' },
+                { id: 'em_qui_3', name: 'Flexão de joelho na toalha', sets: 2, reps: '8-15' },
+                { id: 'em_qui_4', name: 'Panturrilha em pé', sets: 2, reps: '12-20' },
+                { id: 'em_qui_5', name: 'Abdominal reverso', sets: 2, reps: '10-15' }
+              ]
+            },
+            sex: {
+              category: 'workout', subtype: 'Exercícios em Casa', title: 'Superiores Leve',
+              exercises: [
+                { id: 'em_sex_1', name: 'Flexão na bancada firme', sets: 2, reps: '10-15' },
+                { id: 'em_sex_2', name: 'Remada com elástico', sets: 2, reps: '12-20' },
+                { id: 'em_sex_3', name: 'Elevação lateral com elástico', sets: 2, reps: '12-20' },
+                { id: 'em_sex_4', name: 'Rosca com elástico', sets: 2, reps: '10-20' },
+                { id: 'em_sex_5', name: 'Tríceps com elástico', sets: 2, reps: '10-20' }
+              ]
+            },
+            sab: { category: 'sport', subtype: 'Vôlei', title: 'Vôlei', exercises: [] },
+            dom: { category: 'sport', subtype: 'Vôlei', title: 'Vôlei', exercises: [] }
+          },
+          meals: [
+            { id: 'em_m1', name: 'Café da manhã', kcal: 560, protein: 26, items: '2 ovos, 1 pão francês, 250 ml leite integral, 100 g banana' },
+            { id: 'em_m2', name: 'Almoço', kcal: 750, protein: 51, items: '250 g arroz, 100 g feijão, 125 g peito de frango, 120 g legumes, 10 g óleo' },
+            { id: 'em_m3', name: 'Lanche', kcal: 640, protein: 26, items: '250 ml leite integral, 60 g aveia, 100 g banana, 30 g amendoim' },
+            { id: 'em_m4', name: 'Jantar', kcal: 720, protein: 47, items: '250 g arroz, 100 g feijão, 100 g peito de frango, 120 g legumes, 10 g óleo, 1 laranja' }
+          ],
+          dietLogs: {},
+          workoutLogs: [
+            {
+              id: 'wl_em_1', date: getOffsetDateISO(9), dayKey: 'seg', title: 'Peito e Costas',
+              exercises: [
+                { id: 'em_seg_3', name: 'Remada unilateral com mochila', sets: [{ load: '10', reps: '12', done: true }, { load: '10', reps: '12', done: true }, { load: '10', reps: '11', done: true }] },
+                { id: 'em_seg_1', name: 'Barra fixa', sets: [{ load: '0', reps: '5', done: true }, { load: '0', reps: '5', done: true }, { load: '0', reps: '4', done: true }] }
+              ]
+            },
+            {
+              id: 'wl_em_2', date: getOffsetDateISO(2), dayKey: 'seg', title: 'Peito e Costas',
+              exercises: [
+                { id: 'em_seg_3', name: 'Remada unilateral com mochila', sets: [{ load: '12.5', reps: '12', done: true }, { load: '12.5', reps: '12', done: true }, { load: '12.5', reps: '11', done: true }] },
+                { id: 'em_seg_1', name: 'Barra fixa', sets: [{ load: '0', reps: '6', done: true }, { load: '0', reps: '6', done: true }, { load: '0', reps: '5', done: true }] }
+              ]
+            },
+            {
+              id: 'wl_em_3', date: getOffsetDateISO(8), dayKey: 'ter', title: 'Pernas',
+              exercises: [
+                { id: 'em_ter_1', name: 'Agachamento com mochila', sets: [{ load: '12', reps: '14', done: true }, { load: '12', reps: '13', done: true }, { load: '12', reps: '12', done: true }] }
+              ]
+            },
+            {
+              id: 'wl_em_4', date: getOffsetDateISO(1), dayKey: 'ter', title: 'Pernas',
+              exercises: [
+                { id: 'em_ter_1', name: 'Agachamento com mochila', sets: [{ load: '14', reps: '14', done: true }, { load: '14', reps: '13', done: true }, { load: '14', reps: '13', done: true }] }
+              ]
+            }
+          ],
+          sportLogs: [],
+          weights: [
+            { id: 'wem1', date: getOffsetDateISO(13), weight: 77.0 },
+            { id: 'wem2', date: getOffsetDateISO(11), weight: 76.9 },
+            { id: 'wem3', date: getOffsetDateISO(9), weight: 77.1 },
+            { id: 'wem4', date: getOffsetDateISO(5), weight: 77.2 },
+            { id: 'wem5', date: getOffsetDateISO(3), weight: 77.4 },
+            { id: 'wem6', date: getOffsetDateISO(1), weight: 77.3 }
+          ],
+          measurements: [
+            { id: 'mem1', date: getOffsetDateISO(14), waist: 81.5, neck: 38.0, hip: null, arm: 34.0, chest: 97.0, thigh: 56.0, manualBf: null },
+            { id: 'mem2', date: getOffsetDateISO(1), waist: 81.0, neck: 38.0, hip: null, arm: 34.4, chest: 97.6, thigh: 56.5, manualBf: null }
+          ],
+          proteinFoods: [
+            { id: 'pf_1', name: 'PTS (Soja seca)', price: 11.90, packWeight: 400, protPer100: 50 },
+            { id: 'pf_2', name: 'Peito de Frango', price: 21.90, packWeight: 1000, protPer100: 23 },
+            { id: 'pf_3', name: 'Ovos (30 un ~1,5kg)', price: 22.00, packWeight: 1500, protPer100: 13 }
+          ]
+        },
+
+        // 2. GABRIEL
+        {
+          id: 'prof_gabriel',
+          name: 'Gabriel',
+          initials: 'GA',
+          color: 'blue',
+          age: 22,
+          height: 180,
+          sex: 'M',
+          startWeight: 74.0,
+          firstMilestone: 78.0,
+          targetWeight: 82.0,
+          goal: 'Hipertrofia',
+          location: 'Musculação',
+          sportName: '',
+          bmr: 1760,
+          kcalTarget: 2800,
+          proteinTarget: 150,
+          schedule: {
+            seg: {
+              category: 'workout', subtype: 'Musculação', title: 'Peito e Tríceps',
+              exercises: [
+                { id: 'ga_seg_1', name: 'Supino reto', sets: 4, reps: '6-10' },
+                { id: 'ga_seg_2', name: 'Supino inclinado halteres', sets: 3, reps: '8-12' },
+                { id: 'ga_seg_3', name: 'Crucifixo máquina', sets: 3, reps: '10-15' },
+                { id: 'ga_seg_4', name: 'Tríceps polia', sets: 3, reps: '10-15' }
+              ]
+            },
+            ter: {
+              category: 'workout', subtype: 'Musculação', title: 'Costas e Bíceps',
+              exercises: [
+                { id: 'ga_ter_1', name: 'Puxada alta', sets: 4, reps: '8-12' },
+                { id: 'ga_ter_2', name: 'Remada baixa', sets: 3, reps: '8-12' },
+                { id: 'ga_ter_3', name: 'Serrote', sets: 3, reps: '8-12' },
+                { id: 'ga_ter_4', name: 'Rosca direta', sets: 3, reps: '8-12' }
+              ]
+            },
+            qua: {
+              category: 'workout', subtype: 'Musculação', title: 'Pernas',
+              exercises: [
+                { id: 'ga_qua_1', name: 'Agachamento livre', sets: 4, reps: '6-10' },
+                { id: 'ga_qua_2', name: 'Leg press 45', sets: 3, reps: '10-15' },
+                { id: 'ga_qua_3', name: 'Cadeira extensora', sets: 3, reps: '12-15' },
+                { id: 'ga_qua_4', name: 'Panturrilha sentado', sets: 4, reps: '12-20' }
+              ]
+            },
+            qui: {
+              category: 'workout', subtype: 'Musculação', title: 'Ombros e Abdômen',
+              exercises: [
+                { id: 'ga_qui_1', name: 'Desenvolvimento halteres', sets: 4, reps: '8-12' },
+                { id: 'ga_qui_2', name: 'Elevação lateral', sets: 4, reps: '12-15' },
+                { id: 'ga_qui_3', name: 'Face pull', sets: 3, reps: '12-15' },
+                { id: 'ga_qui_4', name: 'Abdominal supra', sets: 3, reps: '15-20' }
+              ]
+            },
+            sex: {
+              category: 'workout', subtype: 'Musculação', title: 'Posterior e Braços',
+              exercises: [
+                { id: 'ga_sex_1', name: 'Stiff', sets: 4, reps: '8-12' },
+                { id: 'ga_sex_2', name: 'Mesa flexora', sets: 3, reps: '10-15' },
+                { id: 'ga_sex_3', name: 'Rosca martelo', sets: 3, reps: '10-12' },
+                { id: 'ga_sex_4', name: 'Tríceps francês', sets: 3, reps: '10-12' }
+              ]
+            },
+            sab: { category: 'rest', subtype: 'Descanso', title: 'Recuperação muscular', exercises: [] },
+            dom: { category: 'rest', subtype: 'Descanso', title: 'Recuperação muscular', exercises: [] }
+          },
+          meals: [
+            { id: 'ga_m1', name: 'Café da manhã', kcal: 620, protein: 32, items: '3 ovos, 2 fatias pão integral, 300 ml leite, 1 banana' },
+            { id: 'ga_m2', name: 'Almoço', kcal: 820, protein: 50, items: '300 g arroz, 100 g feijão, 150 g frango grelhado, salada' },
+            { id: 'ga_m3', name: 'Pré/Pós-treino', kcal: 560, protein: 30, items: '30 g Whey, 60 g aveia, 1 banana' },
+            { id: 'ga_m4', name: 'Jantar', kcal: 800, protein: 42, items: '280 g arroz/macarrão, 140 g patinho ou frango, legumes' }
+          ],
+          dietLogs: {},
+          workoutLogs: [
+            {
+              id: 'wl_ga_1', date: getOffsetDateISO(8), dayKey: 'seg', title: 'Peito e Tríceps',
+              exercises: [
+                { id: 'ga_seg_1', name: 'Supino reto', sets: [{ load: '60', reps: '8', done: true }, { load: '60', reps: '8', done: true }] }
+              ]
+            },
+            {
+              id: 'wl_ga_2', date: getOffsetDateISO(1), dayKey: 'seg', title: 'Peito e Tríceps',
+              exercises: [
+                { id: 'ga_seg_1', name: 'Supino reto', sets: [{ load: '62.5', reps: '8', done: true }, { load: '62.5', reps: '8', done: true }] }
+              ]
+            }
+          ],
+          sportLogs: [],
+          weights: [
+            { id: 'wga1', date: getOffsetDateISO(10), weight: 74.0 },
+            { id: 'wga2', date: getOffsetDateISO(3), weight: 74.4 }
+          ],
+          measurements: [
+            { id: 'mga1', date: getOffsetDateISO(7), waist: 79.0, neck: 38.5, hip: null, arm: 35.5, chest: 99.0, thigh: 57.0, manualBf: null }
+          ],
+          proteinFoods: [
+            { id: 'pf_ga1', name: 'Peito de Frango', price: 21.90, packWeight: 1000, protPer100: 23 },
+            { id: 'pf_ga2', name: 'Whey 900g', price: 109.90, packWeight: 900, protPer100: 80 }
+          ]
+        },
+
+        // 3. GABRIELA
+        {
+          id: 'prof_gabriela',
+          name: 'Gabriela',
+          initials: 'GB',
+          color: 'purple',
+          age: 21,
+          height: 165,
+          sex: 'F',
+          startWeight: 60.0,
+          firstMilestone: 61.0,
+          targetWeight: 62.0,
+          goal: 'Hipertrofia',
+          location: 'Musculação',
+          sportName: 'Vôlei',
+          bmr: 1365,
+          kcalTarget: 2250,
+          proteinTarget: 115,
+          schedule: {
+            seg: {
+              category: 'workout', subtype: 'Musculação', title: 'Inferiores — Quadríceps',
+              exercises: [
+                { id: 'gb_seg_1', name: 'Agachamento livre', sets: 4, reps: '8-12' },
+                { id: 'gb_seg_2', name: 'Leg press 45', sets: 3, reps: '10-15' },
+                { id: 'gb_seg_3', name: 'Afundo búlgaro', sets: 3, reps: '8-12' },
+                { id: 'gb_seg_4', name: 'Cadeira extensora', sets: 3, reps: '12-15' }
+              ]
+            },
+            ter: {
+              category: 'workout', subtype: 'Musculação', title: 'Superiores Completo',
+              exercises: [
+                { id: 'gb_ter_1', name: 'Puxada frente', sets: 3, reps: '10-12' },
+                { id: 'gb_ter_2', name: 'Supino reto halteres', sets: 3, reps: '10-12' },
+                { id: 'gb_ter_3', name: 'Remada baixa', sets: 3, reps: '10-15' },
+                { id: 'gb_ter_4', name: 'Elevação lateral', sets: 3, reps: '12-15' }
+              ]
+            },
+            qua: { category: 'rest', subtype: 'Descanso', title: 'Recuperação muscular', exercises: [] },
+            qui: {
+              category: 'workout', subtype: 'Musculação', title: 'Glúteos e Posterior',
+              exercises: [
+                { id: 'gb_qui_1', name: 'Elevação pélvica', sets: 4, reps: '8-12' },
+                { id: 'gb_qui_2', name: 'Stiff com halteres', sets: 3, reps: '10-12' },
+                { id: 'gb_qui_3', name: 'Mesa flexora', sets: 3, reps: '12-15' },
+                { id: 'gb_qui_4', name: 'Panturrilha em pé', sets: 3, reps: '15-20' }
+              ]
+            },
+            sex: {
+              category: 'workout', subtype: 'Musculação', title: 'Superiores + Core',
+              exercises: [
+                { id: 'gb_sex_1', name: 'Desenvolvimento halteres', sets: 3, reps: '10-15' },
+                { id: 'gb_sex_2', name: 'Face pull', sets: 3, reps: '15-20' },
+                { id: 'gb_sex_3', name: 'Prancha abdominal', sets: 3, reps: '30-45s' }
+              ]
+            },
+            sab: { category: 'sport', subtype: 'Vôlei', title: 'Vôlei', exercises: [] },
+            dom: { category: 'sport', subtype: 'Vôlei', title: 'Vôlei', exercises: [] }
+          },
+          meals: [
+            { id: 'gb_m1', name: 'Café da manhã', kcal: 480, protein: 24, items: '2 ovos, pão ou tapioca, leite/iogurte, fruta' },
+            { id: 'gb_m2', name: 'Almoço', kcal: 640, protein: 38, items: '180 g arroz, 80 g feijão, 110 g frango, legumes' },
+            { id: 'gb_m3', name: 'Lanche', kcal: 510, protein: 22, items: 'Iogurte natural, 40 g aveia, 1 banana, 20 g amendoim' },
+            { id: 'gb_m4', name: 'Jantar', kcal: 620, protein: 34, items: '160 g arroz/batata, 100 g frango ou ovos, salada' }
+          ],
+          dietLogs: {},
+          workoutLogs: [],
+          sportLogs: [],
+          weights: [
+            { id: 'wgb1', date: getOffsetDateISO(9), weight: 60.0 },
+            { id: 'wgb2', date: getOffsetDateISO(2), weight: 60.3 }
+          ],
+          measurements: [
+            { id: 'mgb1', date: getOffsetDateISO(10), waist: 68.5, neck: 32.0, hip: 98.0, arm: 28.0, chest: 86.0, thigh: 55.5, manualBf: null },
+            { id: 'mgb2', date: getOffsetDateISO(1), waist: 68.0, neck: 32.0, hip: 98.5, arm: 28.3, chest: 86.2, thigh: 56.0, manualBf: null }
+          ],
+          proteinFoods: [
+            { id: 'pf_gb1', name: 'Peito de Frango', price: 21.90, packWeight: 1000, protPer100: 23 },
+            { id: 'pf_gb2', name: 'Ovos (30 un)', price: 22.00, packWeight: 1500, protPer100: 13 }
+          ]
+        }
+      ];
+    }
+
+    /* ==========================================================================
+       3. ESTADO & PERSISTÊNCIA (localStorage versionado)
+       ========================================================================== */
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { activeProfileId: 'prof_emmanuel', profiles: getSeedProfiles() };
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed.profiles) || !parsed.profiles.length) {
+          return { activeProfileId: 'prof_emmanuel', profiles: getSeedProfiles() };
+        }
+        return parsed;
+      } catch {
+        return { activeProfileId: 'prof_emmanuel', profiles: getSeedProfiles() };
+      }
+    }
+
+    let state = loadState();
+    let workoutDrafts = {};
+    let charts = { exercise: null, weight: null };
+
+    let ui = {
+      activeTab: 'dashboard',
+      selectedDay: getTodayDayKey(),
+      workoutEditMode: false,
+      selectedExerciseChartId: null,
+      selectedDietDate: getTodayISO(),
+      dietSubTab: 'menu',
+      timer: {
+        secondsLeft: 90,
+        totalSeconds: 90,
+        running: false,
+        intervalId: null,
+        alarming: false,
+        alarmIntervalId: null
+      }
+    };
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch {
+        showToast('Não foi possível salvar no navegador.', 'error');
+      }
+    }
+
+    function getActiveProfile() {
+      return state.profiles.find(p => p.id === state.activeProfileId) || state.profiles[0];
+    }
+
+    /* ==========================================================================
+       4. TEMA CLARO CLEAN / ESCURO CONFORTÁVEL
+       ========================================================================== */
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      if (theme === 'light') html.classList.remove('dark');
+      else html.classList.add('dark');
+      localStorage.setItem(THEME_KEY, theme);
+      updateThemeIcons();
+      if (ui.activeTab === 'evolution') {
+        setTimeout(() => { initExerciseChart(); initWeightChart(); }, 30);
+      }
+    }
+
+    function updateThemeIcons() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const topBtn = document.getElementById('topbar-theme-btn');
+      const sideBtn = document.getElementById('sidebar-theme-btn');
+      if (topBtn) {
+        topBtn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="w-4 h-4"></i>`;
+        lucide.createIcons({ nodes: [topBtn] });
+      }
+      if (sideBtn) {
+        sideBtn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="w-3.5 h-3.5"></i> ${isDark ? 'Modo Claro' : 'Modo Escuro'}`;
+        lucide.createIcons({ nodes: [sideBtn] });
+      }
+    }
+
+    /* ==========================================================================
+       5. CÁLCULOS DE EVOLUÇÃO, PESO E GORDURA CORPORAL (%BF US NAVY)
+       ========================================================================== */
+    function getLatestWeight(p) {
+      const list = p.weights || [];
+      if (!list.length) return Number(p.startWeight || 70);
+      const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date));
+      return Number(sorted[0].weight);
+    }
+
+    function getWeeklyWeightStats(p) {
+      const sorted = [...(p.weights || [])].sort((a, b) => a.date.localeCompare(b.date));
+      const groups = {};
+      sorted.forEach(w => {
+        const wk = getWeekStartISO(w.date);
+        if (!groups[wk]) groups[wk] = [];
+        groups[wk].push(w);
+      });
+      const keys = Object.keys(groups).sort();
+      const weeks = keys.map(wk => {
+        const items = groups[wk];
+        const avg = items.reduce((acc, i) => acc + Number(i.weight), 0) / items.length;
+        return {
+          weekStart: wk,
+          label: `Sem. ${formatShortBR(wk)}`,
+          count: items.length,
+          isComplete: items.length >= 3,
+          avg: Number(avg.toFixed(2)),
+          delta: null
+        };
+      });
+      for (let i = 1; i < weeks.length; i++) {
+        weeks[i].delta = Number((weeks[i].avg - weeks[i - 1].avg).toFixed(2));
+      }
+      return weeks;
+    }
+
+    function getDietTotals(p, dateISO) {
+      const log = (p.dietLogs && p.dietLogs[dateISO]) || { checked: [], extras: [] };
+      let kcal = 0, protein = 0;
+      (p.meals || []).forEach(m => {
+        if ((log.checked || []).includes(m.id)) {
+          kcal += Number(m.kcal || 0);
+          protein += Number(m.protein || 0);
+        }
+      });
+      (log.extras || []).forEach(ex => {
+        kcal += Number(ex.kcal || 0);
+        protein += Number(ex.protein || 0);
+      });
+      return { kcal: Math.round(kcal), protein: Math.round(protein) };
+    }
+
+    function getWeekActivityMap(p) {
+      const thisWeek = getWeekStartISO(getTodayISO());
+      const map = { seg: false, ter: false, qua: false, qui: false, sex: false, sab: false, dom: false };
+      (p.workoutLogs || []).forEach(w => {
+        if (getWeekStartISO(w.date) === thisWeek && map.hasOwnProperty(w.dayKey)) map[w.dayKey] = true;
+      });
+      (p.sportLogs || []).forEach(s => {
+        if (getWeekStartISO(s.date) === thisWeek) {
+          const [y, m, d] = s.date.split('-').map(Number);
+          const dow = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][new Date(y, m - 1, d).getDay()];
+          map[dow] = true;
+        }
+      });
+      return map;
+    }
+
+    function getAllExercises(p) {
+      const list = [];
+      const seen = new Set();
+      DAY_KEYS.forEach(dk => {
+        const day = p.schedule?.[dk];
+        if (day && day.category === 'workout' && day.exercises) {
+          day.exercises.forEach(ex => {
+            if (!seen.has(ex.id)) {
+              seen.add(ex.id);
+              list.push({ ...ex, dayKey: dk });
+            }
+          });
+        }
+      });
+      return list;
+    }
+
+    function getExerciseHistory(p, exId) {
+      const hist = [];
+      const sorted = [...(p.workoutLogs || [])].sort((a, b) => a.date.localeCompare(b.date));
+      sorted.forEach(log => {
+        const found = (log.exercises || []).find(e => e.id === exId);
+        if (found && found.sets && found.sets.length) {
+          let maxLoad = 0, totalVolume = 0, totalReps = 0;
+          found.sets.forEach(s => {
+            const load = parseNumeric(s.load);
+            const reps = parseNumeric(s.reps);
+            if (load > maxLoad) maxLoad = load;
+            if (reps > 0) {
+              totalReps += reps;
+              totalVolume += (load > 0 ? load : 1) * reps;
+            }
+          });
+          hist.push({
+            date: log.date,
+            sets: found.sets,
+            maxLoad: Number(maxLoad.toFixed(1)),
+            totalReps,
+            totalVolume: Math.round(totalVolume)
+          });
+        }
+      });
+      return hist;
+    }
+
+    // Mensagem inteligente de evolução de carga para o card de destaque
+    function getExerciseFeedbackMessage(hist) {
+      if (!hist || hist.length === 0) {
+        return {
+          title: 'Pronto para começar',
+          text: '🚀 Nenhum treino registrado neste exercício ainda! Finalize um treino na aba Treinos para começar a acompanhar sua evolução aqui.'
+        };
+      }
+      if (hist.length === 1) {
+        return {
+          title: 'Linha de base criada',
+          text: '🚀 Primeiro treino registrado neste exercício! No próximo, sua evolução aparece aqui.'
+        };
+      }
+      const prev = hist[hist.length - 2];
+      const curr = hist[hist.length - 1];
+      const diffLoad = Number((curr.maxLoad - prev.maxLoad).toFixed(1));
+
+      if (diffLoad > 0) {
+        return {
+          title: 'Evolução de carga!',
+          text: `🔥 Boa! Você aumentou +${diffLoad.toFixed(1).replace('.', ',')} kg na carga máxima em relação ao último treino!`
+        };
+      }
+      if (diffLoad === 0 && (curr.totalReps > prev.totalReps || curr.totalVolume > prev.totalVolume)) {
+        return {
+          title: 'Mais repetições!',
+          text: '🔥 Boa! Mesma carga, mas você evoluiu nas repetições em relação ao último treino!'
+        };
+      }
+      if (diffLoad === 0) {
+        return {
+          title: 'Consistência firme',
+          text: '⚖️ Carga mantida! Consistência também gera hipertrofia — foque na execução perfeita ou tente +1 repetição na próxima.'
+        };
+      }
+      return {
+        title: 'Recuperação / Deload',
+        text: '🔋 Carga menor que no último treino. Normal! Se estiver em fase de deload (recuperação do sistema nervoso) ou num dia mais cansado, respeite o corpo para voltar mais forte.'
+      };
+    }
+
+    // Cálculo de % de Gordura Corporal (US Navy ou Manual) + Faixas Homem / Mulher
+    function getBodyFatAnalysis(p, latestMeas) {
+      const isFemale = p.sex === 'F';
+      const ranges = isFemale
+        ? [
+            { label: 'Risco', min: 0, max: 14, color: '#06B6D4', badge: 'bg-cyan-500/15 text-cyan-500 border-cyan-500/30', desc: '<14%' },
+            { label: 'Excelente', min: 14, max: 21, color: '#10B981', badge: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30', desc: '14–20%' },
+            { label: 'Bom', min: 21, max: 25, color: '#22C55E', badge: 'bg-green-500/15 text-green-500 border-green-500/30', desc: '21–24%' },
+            { label: 'Ok', min: 25, max: 32, color: '#F59E0B', badge: 'bg-amber-500/15 text-amber-500 border-amber-500/30', desc: '25–31%' },
+            { label: 'Alto', min: 32, max: 37, color: '#F97316', badge: 'bg-orange-500/15 text-orange-500 border-orange-500/30', desc: '32–36%' },
+            { label: 'Perigoso', min: 37, max: 50, color: '#EF4444', badge: 'bg-rose-500/15 text-rose-500 border-rose-500/30', desc: '≥37%' }
+          ]
+        : [
+            { label: 'Risco', min: 0, max: 6, color: '#06B6D4', badge: 'bg-cyan-500/15 text-cyan-500 border-cyan-500/30', desc: '<6%' },
+            { label: 'Excelente', min: 6, max: 14, color: '#10B981', badge: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30', desc: '6–13%' },
+            { label: 'Bom', min: 14, max: 18, color: '#22C55E', badge: 'bg-green-500/15 text-green-500 border-green-500/30', desc: '14–17%' },
+            { label: 'Ok', min: 18, max: 25, color: '#F59E0B', badge: 'bg-amber-500/15 text-amber-500 border-amber-500/30', desc: '18–24%' },
+            { label: 'Alto', min: 25, max: 30, color: '#F97316', badge: 'bg-orange-500/15 text-orange-500 border-orange-500/30', desc: '25–29%' },
+            { label: 'Perigoso', min: 30, max: 45, color: '#EF4444', badge: 'bg-rose-500/15 text-rose-500 border-rose-500/30', desc: '≥30%' }
+          ];
+
+      const maxScale = isFemale ? 50 : 45;
+      let bf = null;
+      let source = '';
+
+      if (latestMeas) {
+        if (latestMeas.manualBf !== null && latestMeas.manualBf !== undefined && latestMeas.manualBf !== '' && Number(latestMeas.manualBf) > 0) {
+          bf = Number(latestMeas.manualBf);
+          source = 'Avaliação manual';
+        } else {
+          const h = Number(p.height || 0);
+          const waist = Number(latestMeas.waist || 0);
+          const neck = Number(latestMeas.neck || 0);
+          const hip = Number(latestMeas.hip || 0);
+
+          if (h > 0 && waist > 0 && neck > 0) {
+            if (isFemale && hip > 0 && (waist + hip - neck) > 0) {
+              const raw = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(h)) - 450;
+              if (isFinite(raw)) {
+                bf = Math.min(55, Math.max(5, Number(raw.toFixed(1))));
+                source = 'Estimativa US Navy';
+              }
+            } else if (!isFemale && (waist - neck) > 0) {
+              const raw = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(h)) - 450;
+              if (isFinite(raw)) {
+                bf = Math.min(50, Math.max(3, Number(raw.toFixed(1))));
+                source = 'Estimativa US Navy';
+              }
+            }
+          }
+        }
+      }
+
+      let activeRange = null;
+      let pinPercent = 0;
+      if (bf !== null) {
+        activeRange = ranges.find(r => bf >= r.min && bf < r.max) || ranges[ranges.length - 1];
+        pinPercent = Math.min(98, Math.max(2, (bf / maxScale) * 100));
+      }
+
+      return {
+        isFemale,
+        refLabel: isFemale ? 'Referência Feminina' : 'Referência Masculina',
+        ranges,
+        maxScale,
+        bf,
+        source,
+        activeRange,
+        pinPercent
+      };
+    }
+
+    /* ==========================================================================
+       6. TOAST, MODAL & CRONÔMETRO DINÂMICO (3 BIPES + CORES)
+       ========================================================================== */
+    function showToast(msg, type = 'success') {
+      const box = document.getElementById('toast-container');
+      const colors = {
+        success: 'bg-emerald-600 text-white border-emerald-500',
+        info: 'bg-cyan-600 text-white border-cyan-500',
+        warning: 'bg-amber-500 text-slate-950 border-amber-400',
+        error: 'bg-rose-600 text-white border-rose-500'
+      };
+      const el = document.createElement('div');
+      el.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-semibold transition-all duration-300 ${colors[type] || colors.success}`;
+      el.innerHTML = `<i data-lucide="${type === 'error' ? 'x-circle' : type === 'warning' ? 'alert-triangle' : 'check-circle-2'}" class="w-4 h-4 shrink-0"></i><span>${escapeHtml(msg)}</span>`;
+      box.appendChild(el);
+      lucide.createIcons({ nodes: [el] });
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(12px)';
+        setTimeout(() => el.remove(), 300);
+      }, 3200);
+    }
+
+    function openModal({ title, bodyHtml, actions }) {
+      const modal = document.getElementById('custom-modal');
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-body').innerHTML = bodyHtml;
+      const actionsEl = document.getElementById('modal-actions');
+      actionsEl.innerHTML = '';
+      (actions || []).forEach(act => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = act.className || 'px-4 py-2 rounded-xl text-xs font-semibold surface-subtle';
+        btn.textContent = act.label;
+        btn.onclick = () => {
+          const res = act.onClick ? act.onClick() : true;
+          if (res !== false && act.close !== false) closeModal();
+        };
+        actionsEl.appendChild(btn);
+      });
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons({ nodes: [modal] });
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('custom-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // Padrão rítmico de bipes de alarme (toca em loop até o usuário parar)
+    function playAlarmPattern() {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        [0, 0.22, 0.44].forEach((delay, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(idx === 2 ? 960 : 760, ctx.currentTime + delay);
+          gain.gain.setValueAtTime(0.24, ctx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.16);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + 0.17);
+        });
+      } catch {}
+    }
+
+    function startAlarmLoop() {
+      stopAlarmLoop();
+      ui.timer.alarming = true;
+      playAlarmPattern();
+      ui.timer.alarmIntervalId = setInterval(playAlarmPattern, 1100);
+      updateTimerUI();
+    }
+
+    function stopAlarmLoop() {
+      if (ui.timer.alarmIntervalId) {
+        clearInterval(ui.timer.alarmIntervalId);
+        ui.timer.alarmIntervalId = null;
+      }
+      ui.timer.alarming = false;
+    }
+
+    function formatTimer(sec) {
+      return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+    }
+
+    // Cor proporcional ao tempo total: >50% azul/ciano, <=50% e >15% laranja-amarelado, <=15% vermelho
+    function getTimerPhaseColors() {
+      const left = ui.timer.secondsLeft;
+      const total = ui.timer.totalSeconds || 1;
+      const pct = left / total;
+      if (ui.timer.alarming || pct <= 0.15) {
+        return {
+          text: 'text-rose-500',
+          iconBox: 'bg-rose-500/15 text-rose-500',
+          bar: 'bg-gradient-to-r from-rose-500 to-red-600',
+          border: 'border-rose-500/70 ring-1 ring-rose-500/30'
+        };
+      }
+      if (pct <= 0.50) {
+        return {
+          text: 'text-amber-500',
+          iconBox: 'bg-amber-500/15 text-amber-500',
+          bar: 'bg-gradient-to-r from-amber-400 to-orange-500',
+          border: 'border-amber-500/60'
+        };
+      }
+      return {
+        text: 'text-cyan-500 dark:text-cyan-400',
+        iconBox: 'bg-cyan-500/15 text-cyan-500',
+        bar: 'bg-gradient-to-r from-cyan-500 to-blue-500',
+        border: 'border-cyan-500/30'
+      };
+    }
+
+    function updateTimerUI() {
+      const card = document.getElementById('rest-timer-card');
+      const disp = document.getElementById('rest-timer-display');
+      const iconBox = document.getElementById('rest-timer-icon');
+      const bar = document.getElementById('rest-timer-bar');
+      const actionsBox = document.getElementById('rest-timer-actions');
+      const phase = getTimerPhaseColors();
+
+      if (card) {
+        card.className = `sticky top-[60px] z-20 card-surface rounded-2xl p-4 shadow-lg transition-colors ${phase.border}`;
+      }
+      if (disp) {
+        disp.textContent = formatTimer(ui.timer.secondsLeft);
+        disp.className = `font-display text-3xl sm:text-4xl font-extrabold tabular-nums leading-none transition-colors ${phase.text}`;
+      }
+      if (iconBox) {
+        iconBox.className = `w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${phase.iconBox}`;
+      }
+      if (bar) {
+        const pct = ui.timer.totalSeconds ? (ui.timer.secondsLeft / ui.timer.totalSeconds) * 100 : 0;
+        bar.style.width = `${pct}%`;
+        bar.className = `h-full transition-all duration-300 rounded-full ${phase.bar}`;
+      }
+      if (actionsBox) {
+        if (ui.timer.alarming) {
+          actionsBox.innerHTML = `
+            <button onclick="MF.stopAlarmAndReset()"
+              class="col-span-2 min-h-[50px] py-3.5 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-display font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-500/30 animate-pulse transition">
+              <i data-lucide="volume-x" class="w-5 h-5"></i> 🔇 Parar Alarme / Reiniciar
+            </button>
+          `;
+        } else {
+          actionsBox.innerHTML = `
+            <button onclick="MF.toggleTimer()"
+              class="min-h-[50px] py-3.5 px-4 rounded-xl ${ui.timer.running ? 'bg-amber-500 hover:bg-amber-400 text-slate-950' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'} font-display font-extrabold text-sm flex items-center justify-center gap-2 shadow-md transition">
+              <i data-lucide="${ui.timer.running ? 'pause' : 'play'}" class="w-4 h-4 fill-current"></i>
+              ${ui.timer.running ? 'Pausar' : 'Iniciar'}
+            </button>
+            <button onclick="MF.resetTimer()"
+              class="min-h-[50px] py-3.5 px-4 rounded-xl surface-subtle hover:border-cyan-500/60 font-display font-bold text-sm flex items-center justify-center gap-2 transition">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reiniciar
+            </button>
+          `;
+        }
+        lucide.createIcons({ nodes: [actionsBox] });
+      }
+    }
+
+    function tickTimer() {
+      if (ui.timer.secondsLeft > 0) {
+        ui.timer.secondsLeft--;
+        updateTimerUI();
+      }
+      if (ui.timer.secondsLeft === 0) {
+        clearInterval(ui.timer.intervalId);
+        ui.timer.running = false;
+        startAlarmLoop();
+        showToast('Descanso finalizado! Clique em Parar Alarme.', 'warning');
+      }
+    }
+
+    /* ==========================================================================
+       7. RENDERIZAÇÃO DO SHELL E NAVEGAÇÃO
+       ========================================================================== */
+    function renderShell() {
+      const p = getActiveProfile();
+      const colorObj = AVATAR_COLORS.find(c => c.id === p.color) || AVATAR_COLORS[0];
+
+      document.getElementById('profile-selector').innerHTML = state.profiles
+        .map(pr => `<option value="${pr.id}" ${pr.id === p.id ? 'selected' : ''}>${escapeHtml(pr.name)}</option>`)
+        .join('');
+
+      const dot = document.getElementById('profile-avatar-dot');
+      if (dot) {
+        dot.className = `hidden sm:flex w-8 h-8 rounded-full items-center justify-center font-display font-bold text-xs text-white shrink-0 shadow-sm ${colorObj.bg}`;
+        dot.textContent = p.initials || p.name.slice(0, 2).toUpperCase();
+      }
+
+      document.getElementById('desktop-nav').innerHTML = NAV_ITEMS.map(item => {
+        const active = ui.activeTab === item.id;
+        return `
+          <button onclick="MF.switchTab('${item.id}')"
+            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              active
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-transparent'
+            }">
+            <i data-lucide="${item.icon}" class="w-4 h-4"></i>
+            <span>${item.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      document.getElementById('mobile-nav').innerHTML = NAV_ITEMS.map(item => {
+        const active = ui.activeTab === item.id;
+        return `
+          <button onclick="MF.switchTab('${item.id}')"
+            class="flex flex-col items-center justify-center py-1.5 rounded-xl transition ${
+              active
+                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }">
+            <i data-lucide="${item.icon}" class="w-5 h-5 mb-0.5"></i>
+            <span class="text-[10px] font-bold leading-none">${item.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      updateThemeIcons();
+    }
+
+    function renderApp() {
+      renderShell();
+      const box = document.getElementById('app-content');
+      box.classList.remove('tab-fade');
+      void box.offsetWidth;
+      box.classList.add('tab-fade');
+
+      if (ui.activeTab === 'dashboard') box.innerHTML = renderDashboard();
+      else if (ui.activeTab === 'workouts') box.innerHTML = renderWorkouts();
+      else if (ui.activeTab === 'evolution') box.innerHTML = renderEvolution();
+      else if (ui.activeTab === 'diet') box.innerHTML = renderDiet();
+      else if (ui.activeTab === 'squad') box.innerHTML = renderSquad();
+
+      lucide.createIcons();
+
+      if (ui.activeTab === 'evolution') {
+        setTimeout(() => { initExerciseChart(); initWeightChart(); }, 25);
+      }
+      if (ui.activeTab === 'workouts') updateTimerUI();
+    }
+
+    /* ==========================================================================
+       8. ABA 1: INÍCIO (DASHBOARD LIMPO)
+       ========================================================================== */
+    function renderDashboard() {
+      const p = getActiveProfile();
+      const currW = getLatestWeight(p);
+      const startW = Number(p.startWeight || currW);
+      const targetW = Number(p.targetWeight || currW + 5);
+      const diffTotal = Math.abs(targetW - startW) || 1;
+      const diffDone = p.goal === 'Emagrecimento' ? Math.max(0, startW - currW) : Math.max(0, currW - startW);
+      const pct = Math.min(100, Math.max(0, (diffDone / diffTotal) * 100));
+
+      const weeks = getWeeklyWeightStats(p);
+      const lastWeek = weeks.length ? weeks[weeks.length - 1] : null;
+      let trendText = 'Peso estável';
+      let trendClass = 'bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+      if (lastWeek && lastWeek.delta !== null) {
+        if (lastWeek.delta > 0.02) {
+          trendText = `+${lastWeek.delta.toFixed(2).replace('.', ',')} kg esta semana`;
+          trendClass = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+        } else if (lastWeek.delta < -0.02) {
+          trendText = `${lastWeek.delta.toFixed(2).replace('.', ',')} kg esta semana`;
+          trendClass = 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400';
+        }
+      }
+
+      const todayKey = getTodayDayKey();
+      const todaySched = p.schedule?.[todayKey] || { category: 'rest', subtype: 'Descanso', title: 'Recuperação muscular', exercises: [] };
+      const dietToday = getDietTotals(p, getTodayISO());
+      const kcalPct = Math.min(100, Math.round((dietToday.kcal / (p.kcalTarget || 2500)) * 100));
+      const protPct = Math.min(100, Math.round((dietToday.protein / (p.proteinTarget || 140)) * 100));
+
+      const weekMap = getWeekActivityMap(p);
+      const activeDays = Object.values(weekMap).filter(Boolean).length;
+      const weekRangeBR = getCurrentWeekRangeBR();
+
+      return `
+        <div class="space-y-5">
+          <!-- 1. Card de Resumo do Perfil (CLICÁVEL -> leva para Evolução) -->
+          <section onclick="MF.switchTab('evolution')"
+            class="card-surface rounded-2xl p-5 cursor-pointer hover:border-emerald-500/50 transition group">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    ${escapeHtml(p.goal)} • ${escapeHtml(p.location)}
+                  </span>
+                  <span class="text-[11px] font-bold text-cyan-600 dark:text-cyan-400">
+                    Meta: ${Number(p.kcalTarget || 2500).toLocaleString('pt-BR')} kcal/dia
+                  </span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h2 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">${escapeHtml(p.name)}</h2>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${trendClass}">${trendText}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4 surface-subtle rounded-2xl px-4 py-2.5 self-start sm:self-auto">
+                <div>
+                  <p class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Atual</p>
+                  <p class="font-display text-xl font-extrabold">${currW.toFixed(1).replace('.', ',')} <span class="text-xs font-semibold text-slate-400">kg</span></p>
+                </div>
+                <div class="h-7 w-px bg-slate-200 dark:bg-[#28303B]"></div>
+                <div>
+                  <p class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Meta</p>
+                  <p class="font-display text-xl font-extrabold text-emerald-500">${targetW.toFixed(1).replace('.', ',')} <span class="text-xs font-semibold text-emerald-500/70">kg</span></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex flex-wrap justify-between gap-2 text-xs font-semibold">
+                <span class="text-slate-500 dark:text-slate-400">Início: ${startW} kg</span>
+                ${p.firstMilestone ? `<span class="text-amber-500">1º Marco: ${p.firstMilestone} kg</span>` : ''}
+                <span class="text-emerald-500">${pct.toFixed(0)}% da meta</span>
+              </div>
+              <div class="h-2.5 bg-slate-200 dark:bg-[#111418] rounded-full overflow-hidden">
+                <div class="progress-bar-fill h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full" style="width: ${pct}%"></div>
+              </div>
+              <div class="flex justify-end pt-1">
+                <span class="text-xs font-bold text-emerald-500 group-hover:translate-x-0.5 transition-transform">Ver evolução →</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. Card Treino de Hoje (DESTAQUE MÁXIMO COM DEGRADÊ ROXO / AZUL / CIANO) -->
+          <section class="rounded-2xl p-5 sm:p-6 text-white shadow-xl shadow-blue-600/20 relative overflow-hidden"
+            style="background: linear-gradient(135deg, #7c3aed 0%, #2563eb 52%, #06b6d4 100%);">
+            <div class="relative z-10">
+              <div class="flex items-center justify-between gap-2 mb-2.5">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-white/85">Hoje • ${DAY_LABELS[todayKey].full}</span>
+                <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-white/20 backdrop-blur-sm text-white flex items-center gap-1.5">
+                  ${getActivitySvg(todaySched.category, todaySched.subtype, 'w-3.5 h-3.5')}
+                  <span>${todaySched.category === 'rest' ? 'Descanso' : escapeHtml(todaySched.subtype)}</span>
+                </span>
+              </div>
+              <h3 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">${escapeHtml(todaySched.title)}</h3>
+              <p class="text-xs sm:text-sm text-white/85 mt-1 font-medium">
+                ${todaySched.category === 'workout'
+                  ? `${(todaySched.exercises || []).length} exercício(s) planejado(s)`
+                  : todaySched.category === 'sport'
+                    ? `Esporte: ${escapeHtml(todaySched.subtype)} • Registre tempo e intensidade.`
+                    : 'Dia reservado para descanso, hidratação e recuperação muscular.'}
+              </p>
+              <button onclick="MF.openWorkoutDay('${todayKey}')"
+                class="mt-5 w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-display font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg transition">
+                <i data-lucide="play" class="w-4 h-4 fill-current text-blue-600"></i>
+                ${todaySched.category === 'sport' ? 'Registrar Esporte de Hoje' : 'Abrir Treino de Hoje'}
+              </button>
+            </div>
+          </section>
+
+          <!-- 3. Card Treinos da Semana (LOGO ABAIXO DO TREINO DE HOJE) -->
+          <section class="card-surface rounded-2xl p-5">
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="font-display text-base font-bold">Treinos da Semana</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">${weekRangeBR} • Toque em qualquer dia para abrir</p>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold shrink-0">
+                ${activeDays} dia(s) feitos
+              </span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+              ${DAY_KEYS.map(dk => {
+                const d = p.schedule?.[dk] || { category: 'rest', subtype: 'Descanso', title: 'Recuperação muscular' };
+                const done = weekMap[dk];
+                const isToday = dk === todayKey;
+                const iconBadgeClass = d.category === 'sport'
+                  ? 'bg-purple-500/15 text-purple-500'
+                  : d.category === 'rest'
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                    : 'bg-cyan-500/15 text-cyan-500';
+                return `
+                  <button onclick="MF.openWorkoutDay('${dk}')"
+                    class="text-left p-3 rounded-xl border transition ${
+                      done
+                        ? 'bg-emerald-500/10 border-emerald-500/40'
+                        : isToday
+                          ? 'bg-cyan-500/10 border-cyan-500 ring-1 ring-cyan-500/30'
+                          : 'surface-subtle hover:border-slate-400 dark:hover:border-slate-600'
+                    }">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="text-xs font-bold ${isToday ? 'text-cyan-500' : ''}">${DAY_LABELS[dk].short}</span>
+                      ${done
+                        ? `<span class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center"><i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i></span>`
+                        : `<span class="w-6 h-6 rounded-full ${iconBadgeClass} flex items-center justify-center">${getActivitySvg(d.category, d.subtype, 'w-3.5 h-3.5')}</span>`
+                      }
+                    </div>
+                    <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400 truncate">${d.category === 'rest' ? 'Descanso' : escapeHtml(d.subtype)}</p>
+                    <p class="text-[11px] font-bold truncate mt-0.5">${escapeHtml(d.title)}</p>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </section>
+
+          <!-- 4. Card Dieta de Hoje (POR ÚLTIMO) -->
+          <section class="card-surface rounded-2xl p-5 cursor-pointer hover:border-emerald-500/50 transition" onclick="MF.switchTab('diet')">
+            <div class="flex items-center justify-between mb-3.5">
+              <h3 class="font-display text-base font-bold flex items-center gap-2">
+                <i data-lucide="utensils" class="w-4 h-4 text-emerald-500"></i> Dieta de Hoje
+              </h3>
+              <span class="text-xs font-bold text-emerald-500">Abrir dieta →</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div class="flex justify-between text-xs mb-1.5">
+                  <span class="font-medium text-slate-500 dark:text-slate-400">Calorias</span>
+                  <span class="font-bold">${dietToday.kcal} <span class="text-slate-400 font-normal">/ ${p.kcalTarget} kcal</span></span>
+                </div>
+                <div class="h-2.5 bg-slate-200 dark:bg-[#111418] rounded-full overflow-hidden">
+                  <div class="progress-bar-fill h-full bg-emerald-500 rounded-full" style="width: ${kcalPct}%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1.5">
+                  <span class="font-medium text-slate-500 dark:text-slate-400">Proteína</span>
+                  <span class="font-bold text-cyan-500">${dietToday.protein}g <span class="text-slate-400 font-normal">/ ${p.proteinTarget}g</span></span>
+                </div>
+                <div class="h-2.5 bg-slate-200 dark:bg-[#111418] rounded-full overflow-hidden">
+                  <div class="progress-bar-fill h-full bg-cyan-500 rounded-full" style="width: ${protPct}%"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       9. ABA 2: TREINOS (EXECUÇÃO, ESPORTE, DESCANSO, EDITOR E CRONÔMETRO)
+       ========================================================================== */
+    function getDraftFor(profileId, dk, exercises) {
+      const key = `${profileId}_${dk}`;
+      if (!workoutDrafts[key]) workoutDrafts[key] = {};
+      const draft = workoutDrafts[key];
+      (exercises || []).forEach(ex => {
+        const n = Number(ex.sets || 3);
+        if (!draft[ex.id]) draft[ex.id] = [];
+        while (draft[ex.id].length < n) draft[ex.id].push({ load: '', reps: '', done: false });
+      });
+      return draft;
+    }
+
+    function renderWorkouts() {
+      const p = getActiveProfile();
+      const dk = ui.selectedDay;
+      const day = p.schedule?.[dk] || { category: 'rest', subtype: 'Descanso', title: 'Recuperação muscular', exercises: [] };
+
+      return `
+        <div class="space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-display text-2xl font-extrabold">Treinos</h2>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Execute seu treino do dia ou personalize sua planilha semanal.</p>
+            </div>
+            <button onclick="MF.toggleWorkoutEditMode()"
+              class="px-4 py-2.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 self-start sm:self-auto ${
+                ui.workoutEditMode
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                  : 'card-surface text-cyan-500 hover:border-cyan-500/50'
+              }">
+              <i data-lucide="${ui.workoutEditMode ? 'check' : 'pencil'}" class="w-3.5 h-3.5"></i>
+              ${ui.workoutEditMode ? 'Concluir Edição' : 'Editar Planilha'}
+            </button>
+          </div>
+
+          <!-- Seletor Seg a Dom -->
+          <div class="flex gap-2 overflow-x-auto pb-1">
+            ${DAY_KEYS.map(k => {
+              const sc = p.schedule?.[k] || { category: 'rest' };
+              const active = dk === k;
+              const activeClass = sc.category === 'sport' ? 'bg-purple-500 text-white border-purple-500' :
+                                  sc.category === 'rest' ? 'bg-slate-600 text-white border-slate-600' :
+                                  'bg-cyan-600 text-white border-cyan-500';
+              return `
+                <button onclick="MF.selectWorkoutDay('${k}')"
+                  class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition ${active ? activeClass : 'card-surface text-slate-600 dark:text-slate-300'}">
+                  ${DAY_LABELS[k].short}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          ${ui.workoutEditMode ? renderWorkoutEditor(p, dk, day) : renderWorkoutExecution(p, dk, day)}
+        </div>
+      `;
+    }
+
+    function renderWorkoutEditor(p, dk, day) {
+      return `
+        <div class="card-surface rounded-2xl p-5 space-y-5">
+          <!-- Cabeçalho apenas com o nome do dia da semana -->
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#28303B] pb-3">
+            <h3 class="font-display text-lg font-extrabold">${DAY_LABELS[dk].full}</h3>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-lg surface-subtle text-slate-500 dark:text-slate-300">
+              ${day.category === 'rest' ? 'Descanso' : escapeHtml(day.subtype)}
+            </span>
+          </div>
+
+          <!-- Seletor organizado em 3 grupos: DESCANSO, TREINO e ESPORTE -->
+          <div class="space-y-4">
+            <!-- Grupo 1: DESCANSO -->
+            <div>
+              <p class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Descanso</p>
+              <button onclick="MF.setDayCategorySubtype('${dk}', 'rest', 'Descanso')"
+                class="px-4 py-2 rounded-xl text-xs font-bold border transition ${
+                  day.category === 'rest'
+                    ? 'bg-slate-700 text-white border-slate-600 shadow-sm'
+                    : 'surface-subtle text-slate-600 dark:text-slate-300 hover:border-slate-500'
+                }">
+                Descanso (Recuperação muscular)
+              </button>
+            </div>
+
+            <!-- Grupo 2: TREINO -->
+            <div>
+              <p class="text-[11px] font-extrabold uppercase tracking-wider text-cyan-500 mb-2">Treino</p>
+              <div class="flex flex-wrap gap-2">
+                ${SUBTYPES_BY_CATEGORY.workout.map(st => {
+                  const active = day.category === 'workout' && day.subtype === st.id;
+                  return `
+                    <button onclick="MF.setDayCategorySubtype('${dk}', 'workout', '${st.id}')"
+                      class="px-4 py-2 rounded-xl text-xs font-bold border transition ${
+                        active
+                          ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm'
+                          : 'surface-subtle text-slate-600 dark:text-slate-300 hover:border-cyan-500/50'
+                      }">
+                      ${st.label}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Grupo 3: ESPORTE -->
+            <div>
+              <p class="text-[11px] font-extrabold uppercase tracking-wider text-purple-500 mb-2">Esporte</p>
+              <div class="flex flex-wrap gap-2">
+                ${SUBTYPES_BY_CATEGORY.sport.map(st => {
+                  const active = day.category === 'sport' && day.subtype === st.id;
+                  return `
+                    <button onclick="MF.setDayCategorySubtype('${dk}', 'sport', '${st.id}')"
+                      class="px-3.5 py-2 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
+                        active
+                          ? 'bg-purple-500 text-white border-purple-500 shadow-sm'
+                          : 'surface-subtle text-slate-600 dark:text-slate-300 hover:border-purple-500/50'
+                      }">
+                      ${getActivitySvg('sport', st.id, 'w-3.5 h-3.5')}
+                      <span>${st.label}</span>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo "Exercícios do dia" -->
+          <div class="pt-2">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Exercícios do dia</label>
+            <input type="text" value="${escapeHtml(day.title || '')}"
+              onchange="MF.updateDayTitle('${dk}', this.value)"
+              placeholder="Ex: Peito e Tríceps"
+              class="w-full surface-subtle rounded-xl px-3.5 py-2.5 text-sm font-medium focus:outline-none focus:border-cyan-500" />
+          </div>
+
+          ${day.category === 'workout' ? `
+            <div class="space-y-3 pt-3 border-t border-slate-200 dark:border-[#28303B]">
+              <div class="flex items-center justify-between">
+                <h4 class="font-display text-sm font-bold">Lista de Exercícios (${(day.exercises || []).length})</h4>
+                <button onclick="MF.openExerciseModal('${dk}')" class="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1 transition">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar Exercício
+                </button>
+              </div>
+              <div class="space-y-2">
+                ${(day.exercises || []).map((ex, i) => `
+                  <div class="flex items-center justify-between gap-3 p-3.5 rounded-xl surface-subtle">
+                    <div class="min-w-0">
+                      <p class="text-sm font-bold truncate">${i + 1}. ${escapeHtml(ex.name)}</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">${ex.sets} séries × ${escapeHtml(ex.reps)} reps</p>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button onclick="MF.openExerciseModal('${dk}', '${ex.id}')" class="p-2 rounded-lg text-slate-500 hover:text-cyan-500"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                      <button onclick="MF.deleteExercise('${dk}', '${ex.id}')" class="p-2 rounded-lg text-slate-500 hover:text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                  </div>
+                `).join('') || `<p class="text-xs text-slate-500 py-4 text-center">Nenhum exercício adicionado ainda.</p>`}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderWorkoutExecution(p, dk, day) {
+      // 1. MODO DESCANSO
+      if (day.category === 'rest') {
+        return `
+          <div class="card-surface rounded-2xl p-8 text-center space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+              <i data-lucide="moon" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-display text-xl font-extrabold">${escapeHtml(day.title || 'Recuperação muscular')}</h3>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              O músculo cresce enquanto você descansa. Capriche na hidratação, bata sua meta de proteína e durma bem para chegar mais forte no próximo treino!
+            </p>
+          </div>
+        `;
+      }
+
+      // 2. MODO ESPORTE (Vôlei, Caminhada, Corrida, Tênis, Natação)
+      if (day.category === 'sport') {
+        const recent = [...(p.sportLogs || [])].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+        const distPlaceholder = day.subtype === 'Natação' ? 'Ex: 1500 m' : 'Ex: 5 km (opcional)';
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+            <div class="lg:col-span-3 card-surface rounded-2xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-display text-lg font-bold flex items-center gap-2">
+                  <span class="text-purple-500">${getActivitySvg('sport', day.subtype, 'w-5 h-5')}</span> ${escapeHtml(day.subtype)} — ${escapeHtml(day.title)}
+                </h3>
+              </div>
+              <form onsubmit="MF.saveSportLog(event)" class="space-y-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Data</label>
+                    <input type="date" id="sport-date" value="${getTodayISO()}" required class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Duração (min)</label>
+                    <input type="number" min="5" id="sport-duration" placeholder="Ex: 90" value="60" required class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Distância (opcional)</label>
+                    <input type="text" id="sport-distance" placeholder="${distPlaceholder}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Intensidade</label>
+                  <select id="sport-intensity" class="w-full surface-subtle rounded-xl px-3 py-2.5 text-sm font-medium">
+                    <option value="Leve">Leve</option>
+                    <option value="Moderada" selected>Moderada</option>
+                    <option value="Alta">Alta</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Anotações</label>
+                  <textarea id="sport-notes" rows="2" placeholder="Como foi o desempenho, energia e recuperação?" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-display font-bold text-sm transition shadow-lg shadow-purple-500/20">
+                  Salvar Sessão de Esporte
+                </button>
+              </form>
+            </div>
+            <div class="lg:col-span-2 card-surface rounded-2xl p-5 space-y-2.5">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Últimas Sessões</h4>
+              ${recent.length ? recent.map(s => `
+                <div class="p-3 rounded-xl surface-subtle text-xs space-y-1">
+                  <div class="flex justify-between font-bold">
+                    <span>${formatDateBR(s.date)} • ${escapeHtml(s.sport)}</span>
+                    <span class="text-purple-500">${escapeHtml(s.intensity)}</span>
+                  </div>
+                  <p class="text-slate-600 dark:text-slate-300 font-medium">${escapeHtml(s.duration)} min${s.distance ? ` • ${escapeHtml(s.distance)}` : ''}</p>
+                  ${s.notes ? `<p class="text-slate-500 dark:text-slate-400">${escapeHtml(s.notes)}</p>` : ''}
+                </div>
+              `).join('') : `<p class="text-xs text-slate-500">Nenhuma sessão de esporte registrada ainda.</p>`}
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. MODO TREINO (Musculação / Exercícios em Casa)
+      const exercises = day.exercises || [];
+      const draft = getDraftFor(p.id, dk, exercises);
+      const customMin = Math.floor((ui.timer.totalSeconds || 90) / 60);
+      const customSec = (ui.timer.totalSeconds || 90) % 60;
+
+      return `
+        <!-- Cronômetro de Descanso Sticky com Cores Proporcionais, Tempo Livre e Botões Grandes -->
+        <div id="rest-timer-card" class="sticky top-[60px] z-20 card-surface rounded-2xl p-4 shadow-lg transition-colors space-y-3.5">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div id="rest-timer-icon" class="w-11 h-11 rounded-xl bg-cyan-500/15 text-cyan-500 flex items-center justify-center transition-colors">
+                <i data-lucide="timer" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cronômetro de Descanso</p>
+                <p id="rest-timer-display" class="font-display text-3xl sm:text-4xl font-extrabold tabular-nums leading-none text-cyan-500">${formatTimer(ui.timer.secondsLeft)}</p>
+              </div>
+            </div>
+            <!-- Campo livre de minutos e segundos -->
+            <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1 surface-subtle rounded-xl px-2 py-1.5">
+                <input type="number" id="timer-custom-min" min="0" max="59" value="${customMin}" aria-label="Minutos"
+                  class="w-9 bg-transparent text-center text-xs font-extrabold focus:outline-none" />
+                <span class="text-[10px] font-bold text-slate-400">m</span>
+                <span class="text-slate-400">:</span>
+                <input type="number" id="timer-custom-sec" min="0" max="59" value="${String(customSec).padStart(2, '0')}" aria-label="Segundos"
+                  class="w-9 bg-transparent text-center text-xs font-extrabold focus:outline-none" />
+                <span class="text-[10px] font-bold text-slate-400">s</span>
+              </div>
+              <button onclick="MF.applyCustomTimer()" class="px-2.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold transition">
+                Definir
+              </button>
+            </div>
+          </div>
+
+          <!-- Atalhos rápidos: 30s, 1:00, 1:30, 2:00, 3:00 -->
+          <div class="grid grid-cols-5 gap-1.5">
+            ${[
+              { sec: 30, label: '30s' },
+              { sec: 60, label: '1:00' },
+              { sec: 90, label: '1:30' },
+              { sec: 120, label: '2:00' },
+              { sec: 180, label: '3:00' }
+            ].map(p => `
+              <button onclick="MF.startTimer(${p.sec})"
+                class="py-2 rounded-xl surface-subtle hover:border-cyan-500/60 text-xs font-bold transition ${ui.timer.totalSeconds === p.sec ? 'border-cyan-500 text-cyan-500' : ''}">
+                ${p.label}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Barra de progresso proporcional -->
+          <div class="h-2.5 bg-slate-200 dark:bg-[#111418] rounded-full overflow-hidden mb-4">
+            <div id="rest-timer-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300 rounded-full" style="width: 100%"></div>
+          </div>
+
+          <!-- Botões Grandes e Confortáveis -->
+          <div id="rest-timer-actions" class="grid grid-cols-2 gap-3 pt-1"></div>
+        </div>
+
+          <!-- Botões Grandes e Confortáveis -->
+          <div id="rest-timer-actions" class="grid grid-cols-2 gap-2.5"></div>
+        </div>
+
+        <!-- Cabeçalho do Treino -->
+        <div class="flex items-center justify-between px-1">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-500">${escapeHtml(day.subtype)}</span>
+            <h3 class="font-display text-lg font-extrabold">${DAY_LABELS[dk].full} — ${escapeHtml(day.title)}</h3>
+          </div>
+        </div>
+
+        <!-- Lista de Exercícios -->
+        <div class="space-y-4">
+          ${exercises.map((ex, idx) => {
+            const numSets = Number(ex.sets || 3);
+            const exSets = draft[ex.id] || [];
+            const hist = getExerciseHistory(p, ex.id);
+            const last = hist.length ? hist[hist.length - 1] : null;
+
+            return `
+              <div class="card-surface rounded-2xl p-4 sm:p-5 space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 class="font-display text-base font-bold">${idx + 1}. ${escapeHtml(ex.name)}</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Meta: <strong class="text-slate-800 dark:text-slate-200">${numSets} séries × ${escapeHtml(ex.reps)} reps</strong>
+                    </p>
+                  </div>
+                  <button onclick="MF.startTimer(90)" title="Iniciar 1:30 de descanso"
+                    class="px-2.5 py-1.5 rounded-xl surface-subtle hover:border-cyan-500/50 text-[11px] font-bold text-cyan-500 flex items-center gap-1 shrink-0 transition">
+                    <i data-lucide="timer" class="w-3.5 h-3.5"></i> Descanso
+                  </button>
+                </div>
+
+                ${last ? `
+                  <div class="px-3 py-2 rounded-xl surface-subtle text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-2">
+                    <span class="text-emerald-500 font-bold">Último (${formatShortBR(last.date)}):</span>
+                    <span class="font-medium text-slate-700 dark:text-slate-200">
+                      ${last.sets.map((s, i) => `S${i + 1}: ${s.reps || '-'}${s.load ? ` (${s.load}kg)` : ''}`).join(' • ')}
+                    </span>
+                  </div>
+                ` : ''}
+
+                <div class="space-y-2">
+                  <div class="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase text-slate-400 px-1">
+                    <div class="col-span-2">Série</div>
+                    <div class="col-span-4">Carga (kg)</div>
+                    <div class="col-span-4">Reps feitas</div>
+                    <div class="col-span-2 text-center">Feito</div>
+                  </div>
+                  ${Array.from({ length: numSets }).map((_, sIdx) => {
+                    const s = exSets[sIdx] || { load: '', reps: '', done: false };
+                    return `
+                      <div class="grid grid-cols-12 gap-2 items-center p-1.5 rounded-xl border transition ${
+                        s.done ? 'bg-emerald-500/10 border-emerald-500/40' : 'surface-subtle'
+                      }">
+                        <div class="col-span-2 text-xs font-bold pl-2">#${sIdx + 1}</div>
+                        <div class="col-span-4">
+                          <input type="text" inputmode="decimal" placeholder="Ex: 15" value="${escapeHtml(s.load)}"
+                            onchange="MF.updateDraft('${dk}', '${ex.id}', ${sIdx}, 'load', this.value)"
+                            class="w-full bg-white dark:bg-[#191E24] border border-slate-200 dark:border-[#28303B] rounded-lg px-2.5 py-2 text-xs font-semibold focus:outline-none focus:border-cyan-500" />
+                        </div>
+                        <div class="col-span-4">
+                          <input type="text" inputmode="numeric" placeholder="Ex: 12" value="${escapeHtml(s.reps)}"
+                            onchange="MF.updateDraft('${dk}', '${ex.id}', ${sIdx}, 'reps', this.value)"
+                            class="w-full bg-white dark:bg-[#191E24] border border-slate-200 dark:border-[#28303B] rounded-lg px-2.5 py-2 text-xs font-semibold focus:outline-none focus:border-cyan-500" />
+                        </div>
+                        <div class="col-span-2 flex justify-center">
+                          <button onclick="MF.toggleDraftDone('${dk}', '${ex.id}', ${sIdx})"
+                            class="w-8 h-8 rounded-lg flex items-center justify-center transition ${
+                              s.done ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 hover:text-emerald-500'
+                            }">
+                            <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }).join('') || `
+            <div class="card-surface rounded-2xl p-6 text-center space-y-2">
+              <p class="text-sm font-bold">Nenhum exercício neste dia.</p>
+              <button onclick="MF.toggleWorkoutEditMode()" class="px-4 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold">Editar Planilha</button>
+            </div>
+          `}
+        </div>
+
+        ${exercises.length ? `
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Data:</label>
+              <input type="date" id="workout-date-input" value="${getTodayISO()}" class="card-surface rounded-xl px-3 py-2 text-xs font-semibold" />
+            </div>
+            <button onclick="MF.saveWorkoutLog('${dk}')"
+              class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i> Finalizar e Salvar Treino
+            </button>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    /* ==========================================================================
+       10. ABA 3: EVOLUÇÃO (FEEDBACK DESTAQUE, CARGAS, PESO & FAIXA DE GORDURA %BF)
+       ========================================================================== */
+    function renderEvolution() {
+      const p = getActiveProfile();
+      const allEx = getAllExercises(p);
+      if (!ui.selectedExerciseChartId || !allEx.some(e => e.id === ui.selectedExerciseChartId)) {
+        const withHist = allEx.find(e => getExerciseHistory(p, e.id).length > 0);
+        ui.selectedExerciseChartId = withHist ? withHist.id : (allEx[0]?.id || null);
+      }
+
+      const selectedHist = ui.selectedExerciseChartId ? getExerciseHistory(p, ui.selectedExerciseChartId) : [];
+      const feedback = getExerciseFeedbackMessage(selectedHist);
+
+      const weeks = getWeeklyWeightStats(p);
+      const weeksDesc = [...weeks].reverse();
+
+      const measSorted = [...(p.measurements || [])].sort((a, b) => a.date.localeCompare(b.date));
+      const firstM = measSorted[0];
+      const lastM = measSorted[measSorted.length - 1];
+      const bfInfo = getBodyFatAnalysis(p, lastM);
+
+      return `
+        <div class="space-y-6">
+          <div>
+            <h2 class="font-display text-2xl font-extrabold">Evolução</h2>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Acompanhe sua força, peso semanal, medidas e faixa de gordura corporal.</p>
+          </div>
+
+          <!-- 1. QUADRADINHO DE DESTAQUE VERMELHO-AMARELADO ACIMA DE EVOLUÇÃO DE CARGA -->
+          <section class="rounded-2xl p-4 sm:p-5 border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 shadow-sm">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-orange-500/20">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-extrabold uppercase tracking-wider text-orange-600 dark:text-amber-400">${feedback.title}</p>
+                <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 mt-1 leading-relaxed">${feedback.text}</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. EVOLUÇÃO DE CARGA POR EXERCÍCIO -->
+          <section class="card-surface rounded-2xl p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h3 class="font-display text-base font-bold flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-500"></i> Evolução de Carga por Exercício
+              </h3>
+              <select onchange="MF.selectChartExercise(this.value)" class="surface-subtle rounded-xl px-3 py-2 text-xs font-bold max-w-xs focus:outline-none focus:border-cyan-500">
+                ${allEx.map(ex => `<option value="${ex.id}" ${ex.id === ui.selectedExerciseChartId ? 'selected' : ''}>${escapeHtml(ex.name)} (${DAY_LABELS[ex.dayKey].short})</option>`).join('') || `<option value="">Nenhum exercício</option>`}
+              </select>
+            </div>
+            <div class="relative h-56 sm:h-64 w-full"><canvas id="exercise-chart"></canvas></div>
+          </section>
+
+          <!-- 3. PESO CORPORAL & MÉDIAS SEMANAIS -->
+          <section class="card-surface rounded-2xl p-5 space-y-4">
+            <h3 class="font-display text-base font-bold flex items-center gap-2">
+              <i data-lucide="scale" class="w-4 h-4 text-emerald-500"></i> Peso Corporal & Médias Semanais
+            </h3>
+
+            <!-- Quadradinho Motivacional sobre Recomposição Corporal -->
+            <div class="rounded-xl p-3.5 sm:p-4 bg-cyan-500/10 border border-cyan-500/30 text-xs sm:text-sm text-slate-700 dark:text-cyan-100 leading-relaxed">
+              <strong>💡 A balança não conta toda a história:</strong> Mesmo quando o peso fica parado, seu corpo pode estar em recomposição corporal — perdendo gordura enquanto ganha massa muscular. Olhe também para o aumento das suas cargas e para as medidas!
+            </div>
+
+            <form onsubmit="MF.addWeight(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end surface-subtle p-3.5 rounded-xl">
+              <div class="sm:col-span-4">
+                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Data</label>
+                <input type="date" id="ev-weight-date" value="${getTodayISO()}" required class="w-full card-surface rounded-xl px-3 py-2 text-xs font-medium" />
+              </div>
+              <div class="sm:col-span-4">
+                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Peso matinal (kg)</label>
+                <input type="number" step="0.05" min="30" max="250" id="ev-weight-val" placeholder="Ex: 77.5" required class="w-full card-surface rounded-xl px-3 py-2 text-xs font-medium" />
+              </div>
+              <div class="sm:col-span-4">
+                <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">+ Registrar Peso</button>
+              </div>
+            </form>
+
+            <div class="relative h-56 sm:h-64 w-full"><canvas id="weight-chart"></canvas></div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              ${weeksDesc.map(w => `
+                <div class="p-3 rounded-xl surface-subtle flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold">${w.label}</p>
+                    <span class="text-[10px] font-semibold ${w.isComplete ? 'text-emerald-500' : 'text-amber-500'}">
+                      ${w.isComplete ? `Completa (${w.count})` : `Parcial (${w.count}/3)`}
+                    </span>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-display text-base font-extrabold">${w.avg.toFixed(2).replace('.', ',')} kg</p>
+                    ${w.delta !== null ? `<p class="text-[11px] font-bold ${w.delta >= 0 ? 'text-emerald-500' : 'text-amber-500'}">${w.delta >= 0 ? '+' : ''}${w.delta.toFixed(2).replace('.', ',')} kg</p>` : `<p class="text-[10px] text-slate-400">Base</p>`}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+
+          <!-- 4. MEDIDAS CORPORAIS + GRÁFICO VISUAL DE FAIXA DE GORDURA CORPORAL (%BF) -->
+          <section class="card-surface rounded-2xl p-5 space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-display text-base font-bold flex items-center gap-2">
+                <i data-lucide="ruler" class="w-4 h-4 text-purple-500"></i> Medidas Corporais & Faixa de Gordura (%BF)
+              </h3>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400">
+                ${bfInfo.refLabel}
+              </span>
+            </div>
+
+            <!-- Gráfico Visual de Faixa de Gordura Corporal -->
+            <div class="p-4 sm:p-5 rounded-2xl surface-subtle space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gordura Corporal Estimada</p>
+                  ${bfInfo.bf !== null ? `
+                    <div class="flex items-baseline gap-2.5 mt-1">
+                      <span class="font-display text-3xl font-extrabold">${bfInfo.bf.toFixed(1).replace('.', ',')}%</span>
+                      <span class="px-3 py-1 rounded-full text-xs font-extrabold border ${bfInfo.activeRange.badge}">
+                        ${bfInfo.activeRange.label}
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">${bfInfo.source} • Atualizado em ${formatDateBR(lastM.date)}</p>
+                  ` : `
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Preencha Cintura, Pescoço${bfInfo.isFemale ? ', Quadril' : ''} (ou o % manual) abaixo para ver sua faixa.
+                    </p>
+                  `}
+                </div>
+              </div>
+
+              <!-- Barra Segmentada Colorida + Pino Indicador -->
+              <div class="pt-4 pb-1">
+                <div class="relative">
+                  ${bfInfo.bf !== null ? `
+                    <div class="absolute -top-6 -translate-x-1/2 flex flex-col items-center z-10 transition-all duration-500" style="left: ${bfInfo.pinPercent}%">
+                      <span class="px-1.5 py-0.5 rounded bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-[10px] font-extrabold shadow">
+                        ${bfInfo.bf.toFixed(1).replace('.', ',')}%
+                      </span>
+                      <div class="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-900 dark:border-t-white"></div>
+                    </div>
+                  ` : ''}
+
+                  <div class="h-4 w-full rounded-full overflow-hidden flex shadow-inner">
+                    ${bfInfo.ranges.map(r => {
+                      const widthPct = ((r.max - r.min) / bfInfo.maxScale) * 100;
+                      return `<div style="width: ${widthPct}%; background-color: ${r.color};" title="${r.label} (${r.desc})" class="h-full border-r border-black/15 last:border-r-0"></div>`;
+                    }).join('')}
+                  </div>
+                </div>
+
+                <!-- Legenda das 6 Faixas -->
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-3">
+                  ${bfInfo.ranges.map(r => `
+                    <div class="flex items-center gap-1.5 text-[10px] font-semibold">
+                      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${r.color};"></span>
+                      <div class="leading-tight truncate">
+                        <span class="block font-bold">${r.label}</span>
+                        <span class="text-slate-500 dark:text-slate-400">${r.desc}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <!-- Cards de Medidas Atuais vs 1ª Medição -->
+            ${lastM ? `
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                ${[
+                  { label: 'Cintura', key: 'waist' },
+                  { label: 'Pescoço', key: 'neck' },
+                  ...(bfInfo.isFemale ? [{ label: 'Quadril', key: 'hip' }] : []),
+                  { label: 'Braço', key: 'arm' },
+                  { label: 'Peito', key: 'chest' },
+                  { label: 'Coxa', key: 'thigh' }
+                ].filter(item => lastM[item.key]).map(m => {
+                  const val = Number(lastM[m.key] || 0);
+                  const baseVal = firstM && firstM[m.key] ? Number(firstM[m.key]) : val;
+                  const diff = Number((val - baseVal).toFixed(1));
+                  return `
+                    <div class="p-3 rounded-xl surface-subtle">
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">${m.label}</p>
+                      <p class="font-display text-lg font-extrabold mt-0.5">${val.toFixed(1).replace('.', ',')} <span class="text-[11px] font-normal text-slate-400">cm</span></p>
+                      <p class="text-[11px] font-bold mt-0.5 ${diff >= 0 ? 'text-emerald-500' : 'text-cyan-500'}">${diff >= 0 ? '+' : ''}${diff.toFixed(1).replace('.', ',')} cm</p>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+
+            <!-- Formulário de Medidas -->
+            <form onsubmit="MF.addMeasurement(event)" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-end surface-subtle p-4 rounded-xl">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">Data</label>
+                <input type="date" id="meas-date" value="${getTodayISO()}" required class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">Cintura (cm)</label>
+                <input type="number" step="0.1" id="meas-waist" placeholder="Ex: 81.0" required class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">Pescoço (cm)</label>
+                <input type="number" step="0.1" id="meas-neck" placeholder="${bfInfo.isFemale ? 'Ex: 32.0' : 'Ex: 38.0'}" required class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              ${bfInfo.isFemale ? `
+                <div>
+                  <label class="block text-[10px] font-bold text-purple-500 mb-1">Quadril (cm)</label>
+                  <input type="number" step="0.1" id="meas-hip" placeholder="Ex: 98.0" required class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+                </div>
+              ` : ''}
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">Braço/Bíceps (cm)</label>
+                <input type="number" step="0.1" id="meas-arm" placeholder="Ex: 34.5" class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">Peito (cm)</label>
+                <input type="number" step="0.1" id="meas-chest" placeholder="Ex: 98.0" class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">Coxa (cm)</label>
+                <input type="number" step="0.1" id="meas-thigh" placeholder="Ex: 56.5" class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-500 mb-1">% Gordura manual (opc.)</label>
+                <input type="number" step="0.1" min="3" max="60" id="meas-manual-bf" placeholder="Ex: 15.5" class="w-full card-surface rounded-lg px-2.5 py-2 text-xs" />
+              </div>
+              <div class="col-span-2 sm:col-span-4 pt-1">
+                <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-display font-bold text-xs transition">
+                  Salvar Medidas e Atualizar % de Gordura
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      `;
+    }
+
+    function getChartThemeColors() {
+      const isDark = document.documentElement.classList.contains('dark');
+      return {
+        text: isDark ? '#94A3B8' : '#475569',
+        grid: isDark ? 'rgba(51, 65, 85, 0.28)' : 'rgba(148, 163, 184, 0.25)'
+      };
+    }
+
+    function initWeightChart() {
+      const canvas = document.getElementById('weight-chart');
+      if (!canvas) return;
+      if (charts.weight) charts.weight.destroy();
+      const p = getActiveProfile();
+      const weeks = getWeeklyWeightStats(p);
+      const tc = getChartThemeColors();
+
+      charts.weight = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: weeks.length ? weeks.map(w => w.label) : ['Sem dados'],
+          datasets: [
+            {
+              label: 'Média Semanal (kg)',
+              data: weeks.length ? weeks.map(w => w.avg) : [p.startWeight],
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.14)',
+              borderWidth: 3,
+              pointRadius: 5,
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: `Meta (${p.targetWeight} kg)`,
+              data: (weeks.length ? weeks : [1]).map(() => p.targetWeight),
+              borderColor: '#06B6D4',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: tc.text, font: { size: 11 } } } },
+          scales: {
+            x: { grid: { color: tc.grid }, ticks: { color: tc.text } },
+            y: { grid: { color: tc.grid }, ticks: { color: tc.text, callback: v => v + ' kg' } }
+          }
+        }
+      });
+    }
+
+    function initExerciseChart() {
+      const canvas = document.getElementById('exercise-chart');
+      if (!canvas) return;
+      if (charts.exercise) charts.exercise.destroy();
+      const p = getActiveProfile();
+      const hist = ui.selectedExerciseChartId ? getExerciseHistory(p, ui.selectedExerciseChartId) : [];
+      const tc = getChartThemeColors();
+
+      charts.exercise = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: hist.length ? hist.map(h => formatShortBR(h.date)) : ['Sem registros'],
+          datasets: [
+            {
+              label: 'Carga Máx (kg)',
+              data: hist.length ? hist.map(h => h.maxLoad) : [0],
+              borderColor: '#06B6D4',
+              backgroundColor: 'rgba(6, 182, 212, 0.14)',
+              borderWidth: 3,
+              yAxisID: 'y',
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'Volume Total',
+              data: hist.length ? hist.map(h => h.totalVolume) : [0],
+              borderColor: '#10B981',
+              borderWidth: 2,
+              borderDash: [5, 4],
+              yAxisID: 'y1',
+              tension: 0.3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: tc.text, font: { size: 11 } } } },
+          scales: {
+            x: { grid: { color: tc.grid }, ticks: { color: tc.text } },
+            y: { position: 'left', grid: { color: tc.grid }, ticks: { color: '#06B6D4' } },
+            y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#10B981' } }
+          }
+        }
+      });
+    }
+
+    /* ==========================================================================
+       11. ABA 4: DIETA & CALCULADORA R$/25G PROT
+       ========================================================================== */
+    function renderDiet() {
+      const p = getActiveProfile();
+      const dateISO = ui.selectedDietDate;
+      const log = (p.dietLogs && p.dietLogs[dateISO]) || { checked: [], extras: [] };
+      const totals = getDietTotals(p, dateISO);
+      const kcalPct = Math.min(100, Math.round((totals.kcal / (p.kcalTarget || 2500)) * 100));
+      const protPct = Math.min(100, Math.round((totals.protein / (p.proteinTarget || 140)) * 100));
+
+      return `
+        <div class="space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-display text-2xl font-extrabold">Dieta</h2>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Cardápio diário e comparador de custo-benefício de proteínas.</p>
+            </div>
+            <div class="flex card-surface p-1 rounded-xl self-start sm:self-auto">
+              <button onclick="MF.setDietSubTab('menu')" class="px-3.5 py-2 rounded-lg text-xs font-bold transition ${ui.dietSubTab === 'menu' ? 'bg-emerald-500 text-slate-950' : 'text-slate-500 dark:text-slate-400'}">Cardápio Diário</button>
+              <button onclick="MF.setDietSubTab('calc')" class="px-3.5 py-2 rounded-lg text-xs font-bold transition ${ui.dietSubTab === 'calc' ? 'bg-emerald-500 text-slate-950' : 'text-slate-500 dark:text-slate-400'}">Calculadora R$/25g Prot</button>
+            </div>
+          </div>
+
+          ${ui.dietSubTab === 'menu' ? `
+            <div class="card-surface rounded-2xl p-5 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Dia:</label>
+                  <input type="date" value="${dateISO}" onchange="MF.changeDietDate(this.value)" class="surface-subtle rounded-xl px-3 py-1.5 text-xs font-semibold" />
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button onclick="MF.adjustKcalTarget(-150)" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-500 text-xs font-bold">-150 kcal</button>
+                  <button onclick="MF.adjustKcalTarget(150)" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">+150 kcal</button>
+                  <button onclick="MF.adjustKcalTarget(200)" class="px-2.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-bold">+200 kcal</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="p-3.5 rounded-xl surface-subtle">
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-slate-500 dark:text-slate-400">Calorias</span>
+                    <span class="font-bold text-emerald-500">${kcalPct}%</span>
+                  </div>
+                  <p class="font-display text-xl font-extrabold">${totals.kcal} <span class="text-xs font-normal text-slate-400">/ ${p.kcalTarget} kcal</span></p>
+                  <div class="mt-2 h-2 bg-slate-200 dark:bg-[#191E24] rounded-full overflow-hidden">
+                    <div class="progress-bar-fill h-full bg-emerald-500 rounded-full" style="width: ${kcalPct}%"></div>
+                  </div>
+                </div>
+                <div class="p-3.5 rounded-xl surface-subtle">
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-slate-500 dark:text-slate-400">Proteína</span>
+                    <span class="font-bold text-cyan-500">${protPct}%</span>
+                  </div>
+                  <p class="font-display text-xl font-extrabold">${totals.protein}g <span class="text-xs font-normal text-slate-400">/ ${p.proteinTarget}g</span></p>
+                  <div class="mt-2 h-2 bg-slate-200 dark:bg-[#191E24] rounded-full overflow-hidden">
+                    <div class="progress-bar-fill h-full bg-cyan-500 rounded-full" style="width: ${protPct}%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-display text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Refeições</h3>
+                <button onclick="MF.openMealModal()" class="px-3 py-1.5 rounded-xl bg-cyan-500/15 text-cyan-500 text-xs font-bold flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nova Refeição
+                </button>
+              </div>
+              ${(p.meals || []).map(m => {
+                const checked = (log.checked || []).includes(m.id);
+                return `
+                  <div class="rounded-2xl p-4 border transition flex items-start gap-3 ${checked ? 'bg-emerald-500/10 border-emerald-500/40' : 'card-surface'}">
+                    <button onclick="MF.toggleMeal('${m.id}')" class="mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition ${checked ? 'bg-emerald-500 text-white' : 'surface-subtle text-transparent'}">
+                      <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+                    </button>
+                    <div class="flex-1 min-w-0 cursor-pointer" onclick="MF.toggleMeal('${m.id}')">
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="font-display text-sm sm:text-base font-bold ${checked ? 'text-emerald-600 dark:text-emerald-400 line-through' : ''}">${escapeHtml(m.name)}</h4>
+                        <div class="flex gap-1.5 text-[11px] font-bold">
+                          <span class="px-2 py-0.5 rounded surface-subtle text-emerald-500">${m.kcal} kcal</span>
+                          <span class="px-2 py-0.5 rounded surface-subtle text-cyan-500">${m.protein}g prot</span>
+                        </div>
+                      </div>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${escapeHtml(m.items)}</p>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button onclick="MF.openMealModal('${m.id}')" class="p-1.5 text-slate-400 hover:text-cyan-500"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                      <button onclick="MF.deleteMeal('${m.id}')" class="p-1.5 text-slate-400 hover:text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <div class="card-surface rounded-2xl p-5 space-y-3">
+              <h3 class="font-display text-sm font-bold">Adicionar Extra do Dia</h3>
+              <form onsubmit="MF.addDietExtra(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                <input type="text" id="diet-extra-name" placeholder="Ex: Pão + banana" required class="sm:col-span-5 surface-subtle rounded-xl px-3 py-2 text-xs" />
+                <input type="number" id="diet-extra-kcal" placeholder="kcal" required min="0" class="sm:col-span-2 surface-subtle rounded-xl px-3 py-2 text-xs" />
+                <input type="number" id="diet-extra-prot" placeholder="Prot (g)" min="0" class="sm:col-span-2 surface-subtle rounded-xl px-3 py-2 text-xs" />
+                <button type="submit" class="sm:col-span-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs">+ Adicionar</button>
+              </form>
+              ${(log.extras || []).length ? `
+                <div class="space-y-1.5 pt-2">
+                  ${log.extras.map(ex => `
+                    <div class="flex items-center justify-between px-3 py-2 rounded-xl surface-subtle text-xs">
+                      <span><strong>${escapeHtml(ex.name)}</strong> <span class="text-slate-500 ml-1">+${ex.kcal} kcal • ${ex.protein}g prot</span></span>
+                      <button onclick="MF.removeDietExtra('${ex.id}')" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          ` : renderProteinCalculator(p)}
+        </div>
+      `;
+    }
+
+    function renderProteinCalculator(p) {
+      const ranked = [...(p.proteinFoods || [])].map(item => {
+        const totalProt = (Number(item.packWeight) / 100) * Number(item.protPer100);
+        const cost25 = totalProt > 0 ? (Number(item.price) / totalProt) * 25 : 0;
+        return { ...item, cost25 };
+      }).sort((a, b) => a.cost25 - b.cost25);
+
+      return `
+        <div class="card-surface rounded-2xl p-5 space-y-4">
+          <div>
+            <h3 class="font-display text-lg font-bold flex items-center gap-2">
+              <i data-lucide="calculator" class="w-5 h-5 text-emerald-500"></i> Custo por 25g de Proteína
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Descubra qual fonte de proteína rende mais no seu mercado.</p>
+          </div>
+          <form onsubmit="MF.addProteinFood(event)" class="grid grid-cols-2 sm:grid-cols-12 gap-2.5 items-end">
+            <div class="col-span-2 sm:col-span-4">
+              <label class="block text-[10px] text-slate-500 mb-1">Alimento</label>
+              <input type="text" id="pf-name" placeholder="Ex: Sardinha, Patinho..." required class="w-full surface-subtle rounded-xl px-3 py-2 text-xs" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-[10px] text-slate-500 mb-1">Preço (R$)</label>
+              <input type="number" step="0.01" id="pf-price" placeholder="21.90" required class="w-full surface-subtle rounded-xl px-3 py-2 text-xs" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-[10px] text-slate-500 mb-1">Peso (g)</label>
+              <input type="number" id="pf-weight" placeholder="1000" required class="w-full surface-subtle rounded-xl px-3 py-2 text-xs" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-[10px] text-slate-500 mb-1">Prot / 100g</label>
+              <input type="number" step="0.1" id="pf-prot" placeholder="23" required class="w-full surface-subtle rounded-xl px-3 py-2 text-xs" />
+            </div>
+            <div class="col-span-2 sm:col-span-2">
+              <button type="submit" class="w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">Comparar</button>
+            </div>
+          </form>
+
+          <div class="space-y-2 pt-2">
+            ${ranked.map((item, idx) => `
+              <div class="flex items-center justify-between gap-2 p-3.5 rounded-xl border ${idx === 0 ? 'bg-emerald-500/10 border-emerald-500/40' : 'surface-subtle'}">
+                <div class="flex items-center gap-3">
+                  <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}">${idx + 1}º</span>
+                  <div>
+                    <p class="text-sm font-bold">${escapeHtml(item.name)}</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">R$ ${Number(item.price).toFixed(2).replace('.', ',')} / ${item.packWeight}g • ${item.protPer100}g prot/100g</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="font-display text-base font-extrabold ${idx === 0 ? 'text-emerald-500' : ''}">R$ ${item.cost25.toFixed(2).replace('.', ',')}</span>
+                  <button onclick="MF.removeProteinFood('${item.id}')" class="text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       12. ABA 5: GALERA & BACKUP
+       ========================================================================== */
+    function renderSquad() {
+      return `
+        <div class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-display text-2xl font-extrabold">Galera</h2>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Resumo da semana de todos os perfis cadastrados e backup dos dados.</p>
+            </div>
+            <button onclick="MF.openProfileModal('create')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 self-start sm:self-auto">
+              <i data-lucide="user-plus" class="w-4 h-4"></i> + Criar Perfil
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${state.profiles.map(p => {
+              const colorObj = AVATAR_COLORS.find(c => c.id === p.color) || AVATAR_COLORS[0];
+              const doneWeek = Object.values(getWeekActivityMap(p)).filter(Boolean).length;
+              const currW = getLatestWeight(p);
+              const isSelected = p.id === state.activeProfileId;
+              return `
+                <div class="card-surface rounded-2xl p-5 flex flex-col justify-between ${isSelected ? 'ring-2 ring-emerald-500/60' : ''}">
+                  <div>
+                    <div class="flex items-center gap-3 mb-4">
+                      <div class="w-11 h-11 rounded-full ${colorObj.bg} text-white font-display font-extrabold text-sm flex items-center justify-center shrink-0">
+                        ${escapeHtml(p.initials || p.name.slice(0, 2).toUpperCase())}
+                      </div>
+                      <div class="min-w-0">
+                        <h3 class="font-display text-base font-bold truncate">${escapeHtml(p.name)}</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(p.goal)} • ${escapeHtml(p.location)}</p>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                      <div class="p-2.5 rounded-xl surface-subtle">
+                        <p class="text-[10px] text-slate-500">Na semana</p>
+                        <p class="font-display font-bold">${doneWeek} dia(s)</p>
+                      </div>
+                      <div class="p-2.5 rounded-xl surface-subtle">
+                        <p class="text-[10px] text-slate-500">Peso / Meta</p>
+                        <p class="font-display font-bold text-emerald-500">${currW.toFixed(1).replace('.', ',')} / ${p.targetWeight}kg</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button onclick="MF.selectProfile('${p.id}'); MF.switchTab('dashboard')"
+                    class="mt-4 w-full py-2.5 rounded-xl text-xs font-bold transition ${
+                      isSelected ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'surface-subtle hover:border-cyan-500/50'
+                    }">
+                    ${isSelected ? 'Perfil Ativo' : 'Acessar Perfil'}
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Backup JSON -->
+          <section class="card-surface rounded-2xl p-5 space-y-3">
+            <h3 class="font-display text-base font-bold">Backup Local (JSON)</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Todos os dados ficam salvos automaticamente no navegador. Exporte ou importe um backup quando quiser.</p>
+            <div class="flex flex-wrap gap-2.5 pt-1">
+              <button onclick="MF.exportBackup()" class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Exportar Backup JSON
+              </button>
+              <button onclick="document.getElementById('import-json-input').click()" class="px-4 py-2.5 rounded-xl surface-subtle font-bold text-xs flex items-center gap-1.5 hover:border-cyan-500/50 transition">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Importar Backup JSON
+              </button>
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       13. MODAIS (PERFIL, EXERCÍCIO E REFEIÇÃO)
+       ========================================================================== */
+    function openProfileModal(mode) {
+      const isEdit = mode === 'edit';
+      const p = isEdit ? getActiveProfile() : {
+        name: '', color: 'emerald', age: 21, height: 175, sex: 'M',
+        startWeight: 70, firstMilestone: '', targetWeight: 75,
+        goal: 'Hipertrofia', location: 'Musculação', sportName: ''
+      };
+
+      openModal({
+        title: isEdit ? 'Editar Perfil' : 'Criar Novo Perfil',
+        bodyHtml: `
+          <div class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Nome</label>
+                <input id="pm-name" type="text" value="${escapeHtml(p.name)}" placeholder="Ex: Lucas" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Cor do Avatar</label>
+                <select id="pm-color" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm">
+                  ${AVATAR_COLORS.map(c => `<option value="${c.id}" ${p.color === c.id ? 'selected' : ''}>${c.label}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Sexo</label>
+                <select id="pm-sex" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm">
+                  <option value="M" ${p.sex === 'M' ? 'selected' : ''}>Masculino</option>
+                  <option value="F" ${p.sex === 'F' ? 'selected' : ''}>Feminino</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Idade</label>
+                <input id="pm-age" type="number" value="${p.age}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Altura (cm)</label>
+                <input id="pm-height" type="number" value="${p.height}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Peso inicial (kg)</label>
+                <input id="pm-weight" type="number" step="0.1" value="${p.startWeight}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">1º Marco (opc.)</label>
+                <input id="pm-milestone" type="number" step="0.1" value="${p.firstMilestone || ''}" placeholder="Ex: 79.5" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Meta (kg)</label>
+                <input id="pm-target" type="number" step="0.1" value="${p.targetWeight}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Objetivo</label>
+                <select id="pm-goal" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm">
+                  <option value="Hipertrofia" ${p.goal === 'Hipertrofia' ? 'selected' : ''}>Hipertrofia</option>
+                  <option value="Emagrecimento" ${p.goal === 'Emagrecimento' ? 'selected' : ''}>Emagrecimento</option>
+                  <option value="Recomposição" ${p.goal === 'Recomposição' ? 'selected' : ''}>Recomposição</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Local padrão</label>
+                <select id="pm-location" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm">
+                  <option value="Musculação" ${p.location === 'Musculação' ? 'selected' : ''}>Musculação</option>
+                  <option value="Exercícios em Casa" ${p.location === 'Exercícios em Casa' ? 'selected' : ''}>Exercícios em Casa</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Esporte extra (opcional)</label>
+              <input id="pm-sport" type="text" value="${escapeHtml(p.sportName || '')}" placeholder="Ex: Vôlei, Corrida, Natação..." class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+            </div>
+            <p class="text-[11px] text-emerald-500 font-medium">
+              TMB (Mifflin-St Jeor), calorias e proteína são calculados automaticamente. Novos perfis começam com 1 exercício de exemplo por dia em Musculação para você personalizar livremente.
+            </p>
+          </div>
+        `,
+        actions: [
+          ...(isEdit && state.profiles.length > 1 ? [{
+            label: 'Excluir',
+            className: 'px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-500 mr-auto',
+            onClick: () => {
+              state.profiles = state.profiles.filter(x => x.id !== p.id);
+              state.activeProfileId = state.profiles[0].id;
+              saveState();
+              showToast('Perfil removido.', 'info');
+              renderApp();
+            }
+          }] : []),
+          { label: 'Cancelar', className: 'px-4 py-2 rounded-xl text-xs font-semibold surface-subtle' },
+          {
+            label: isEdit ? 'Salvar Alterações' : 'Criar Perfil',
+            className: 'px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400',
+            onClick: () => {
+              const name = document.getElementById('pm-name').value.trim();
+              if (!name) { showToast('Informe o nome do perfil.', 'warning'); return false; }
+              const sex = document.getElementById('pm-sex').value;
+              const age = Number(document.getElementById('pm-age').value) || 21;
+              const height = Number(document.getElementById('pm-height').value) || 175;
+              const startWeight = Number(document.getElementById('pm-weight').value) || 70;
+              const msVal = document.getElementById('pm-milestone').value;
+              const firstMilestone = msVal ? Number(msVal) : null;
+              const targetWeight = Number(document.getElementById('pm-target').value) || 75;
+              const goal = document.getElementById('pm-goal').value;
+              const location = document.getElementById('pm-location').value;
+              const sportName = document.getElementById('pm-sport').value.trim();
+              const color = document.getElementById('pm-color').value;
+              const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+              const calc = calculateNutritionTargets({ sex, age, height, weight: startWeight, goal, hasSport: !!sportName });
+
+              if (isEdit) {
+                Object.assign(p, { name, initials, color, sex, age, height, startWeight, firstMilestone, targetWeight, goal, location, sportName, ...calc });
+                saveState();
+                showToast('Perfil atualizado!', 'success');
+              } else {
+                const id = 'prof_' + Date.now();
+                state.profiles.push({
+                  id, name, initials, color, sex, age, height, startWeight, firstMilestone, targetWeight, goal, location, sportName,
+                  ...calc,
+                  schedule: buildNewProfileSchedule(id),
+                  meals: [
+                    { id: 'm1', name: 'Café da manhã', kcal: Math.round(calc.kcalTarget * 0.22), protein: Math.round(calc.proteinTarget * 0.20), items: 'Ovos, pão/aveia, leite e fruta' },
+                    { id: 'm2', name: 'Almoço', kcal: Math.round(calc.kcalTarget * 0.30), protein: Math.round(calc.proteinTarget * 0.35), items: 'Arroz, feijão, frango/carne e legumes' },
+                    { id: 'm3', name: 'Lanche', kcal: Math.round(calc.kcalTarget * 0.20), protein: Math.round(calc.proteinTarget * 0.15), items: 'Iogurte/leite, aveia, banana e amendoim' },
+                    { id: 'm4', name: 'Jantar', kcal: Math.round(calc.kcalTarget * 0.28), protein: Math.round(calc.proteinTarget * 0.30), items: 'Arroz/macarrão, proteína magra e salada' }
+                  ],
+                  dietLogs: {}, workoutLogs: [], sportLogs: [],
+                  weights: [{ id: 'w_' + Date.now(), date: getTodayISO(), weight: startWeight }],
+                  measurements: [],
+                  proteinFoods: [
+                    { id: 'pf_1', name: 'Peito de Frango', price: 21.90, packWeight: 1000, protPer100: 23 },
+                    { id: 'pf_2', name: 'Ovos (30 un)', price: 22.00, packWeight: 1500, protPer100: 13 }
+                  ]
+                });
+                state.activeProfileId = id;
+                ui.selectedExerciseChartId = null;
+                saveState();
+                showToast(`Perfil de ${name} criado!`, 'success');
+              }
+              renderApp();
+            }
+          }
+        ]
+      });
+    }
+
+    function openExerciseModal(dk, exId = null) {
+      const p = getActiveProfile();
+      const day = p.schedule[dk];
+      const existing = exId ? (day.exercises || []).find(e => e.id === exId) : null;
+      const ex = existing || { name: '', sets: 3, reps: '8-12' };
+
+      openModal({
+        title: existing ? 'Editar Exercício' : 'Adicionar Exercício',
+        bodyHtml: `
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Nome do exercício</label>
+              <input id="ex-name" type="text" value="${escapeHtml(ex.name)}" placeholder="Ex: Supino inclinado" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Séries</label>
+                <input id="ex-sets" type="number" min="1" max="10" value="${ex.sets}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Faixa de reps</label>
+                <input id="ex-reps" type="text" value="${escapeHtml(ex.reps)}" placeholder="8-12" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+            </div>
+          </div>
+        `,
+        actions: [
+          { label: 'Cancelar', className: 'px-4 py-2 rounded-xl text-xs font-semibold surface-subtle' },
+          {
+            label: 'Salvar',
+            className: 'px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-500',
+            onClick: () => {
+              const name = document.getElementById('ex-name').value.trim();
+              if (!name) return false;
+              const obj = {
+                id: existing ? existing.id : 'ex_' + Date.now(),
+                name,
+                sets: Number(document.getElementById('ex-sets').value) || 3,
+                reps: document.getElementById('ex-reps').value.trim() || '8-12'
+              };
+              if (!day.exercises) day.exercises = [];
+              if (existing) day.exercises[day.exercises.findIndex(e => e.id === existing.id)] = obj;
+              else day.exercises.push(obj);
+              saveState();
+              renderApp();
+            }
+          }
+        ]
+      });
+    }
+
+    function openMealModal(mealId = null) {
+      const p = getActiveProfile();
+      const existing = mealId ? (p.meals || []).find(m => m.id === mealId) : null;
+      const m = existing || { name: '', kcal: 500, protein: 30, items: '' };
+
+      openModal({
+        title: existing ? 'Editar Refeição' : 'Nova Refeição',
+        bodyHtml: `
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Nome</label>
+              <input id="mm-name" type="text" value="${escapeHtml(m.name)}" placeholder="Ex: Ceia" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Calorias (kcal)</label>
+                <input id="mm-kcal" type="number" value="${m.kcal}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Proteína (g)</label>
+                <input id="mm-prot" type="number" value="${m.protein}" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Alimentos</label>
+              <textarea id="mm-items" rows="2" class="w-full surface-subtle rounded-xl px-3 py-2 text-sm">${escapeHtml(m.items)}</textarea>
+            </div>
+          </div>
+        `,
+        actions: [
+          { label: 'Cancelar', className: 'px-4 py-2 rounded-xl text-xs font-semibold surface-subtle' },
+          {
+            label: 'Salvar',
+            className: 'px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400',
+            onClick: () => {
+              const name = document.getElementById('mm-name').value.trim();
+              if (!name) return false;
+              const obj = {
+                id: existing ? existing.id : 'ml_' + Date.now(),
+                name,
+                kcal: Number(document.getElementById('mm-kcal').value) || 0,
+                protein: Number(document.getElementById('mm-prot').value) || 0,
+                items: document.getElementById('mm-items').value.trim()
+              };
+              if (!p.meals) p.meals = [];
+              if (existing) p.meals[p.meals.findIndex(x => x.id === existing.id)] = obj;
+              else p.meals.push(obj);
+              saveState();
+              renderApp();
+            }
+          }
+        ]
+      });
+    }
+
+    /* ==========================================================================
+       14. API GLOBAL DE INTERAÇÕES (window.MF)
+       ========================================================================== */
+    window.MF = {
+      closeModal,
+      openProfileModal,
+      openExerciseModal,
+      openMealModal,
+
+      toggleTheme() {
+        const isDark = document.documentElement.classList.contains('dark');
+        applyTheme(isDark ? 'light' : 'dark');
+      },
+
+      switchTab(id) {
+        ui.activeTab = id;
+        renderApp();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      selectProfile(id) {
+        state.activeProfileId = id;
+        ui.selectedExerciseChartId = null;
+        ui.workoutEditMode = false;
+        saveState();
+        renderApp();
+      },
+
+      openWorkoutDay(dk) {
+        ui.selectedDay = dk;
+        ui.activeTab = 'workouts';
+        ui.workoutEditMode = false;
+        renderApp();
+      },
+
+      selectWorkoutDay(dk) {
+        ui.selectedDay = dk;
+        renderApp();
+      },
+
+      toggleWorkoutEditMode() {
+        ui.workoutEditMode = !ui.workoutEditMode;
+        renderApp();
+      },
+
+      setDayCategorySubtype(dk, category, subtype) {
+        const p = getActiveProfile();
+        if (!p.schedule[dk]) p.schedule[dk] = { category, subtype, title: '', exercises: [] };
+        const day = p.schedule[dk];
+        day.category = category;
+        day.subtype = subtype;
+        if (category === 'rest') {
+          day.title = 'Recuperação muscular';
+        } else if (category === 'sport') {
+          day.title = subtype;
+        } else if (category === 'workout') {
+          if (!day.title || day.title === 'Recuperação muscular') day.title = 'Treino de ' + subtype;
+          if (!Array.isArray(day.exercises) || day.exercises.length === 0) {
+            day.exercises = [{ id: `ex_${Date.now()}`, name: 'Supino reto', sets: 3, reps: '8-12' }];
+          }
+        }
+        saveState();
+        renderApp();
+      },
+
+      updateDayTitle(dk, val) {
+        const p = getActiveProfile();
+        if (p.schedule[dk]) {
+          p.schedule[dk].title = val;
+          saveState();
+        }
+      },
+
+      deleteExercise(dk, exId) {
+        const p = getActiveProfile();
+        p.schedule[dk].exercises = (p.schedule[dk].exercises || []).filter(e => e.id !== exId);
+        saveState();
+        renderApp();
+      },
+
+      updateDraft(dk, exId, sIdx, field, val) {
+        const p = getActiveProfile();
+        const draft = getDraftFor(p.id, dk, p.schedule[dk].exercises);
+        draft[exId][sIdx][field] = val;
+      },
+
+      toggleDraftDone(dk, exId, sIdx) {
+        const p = getActiveProfile();
+        const draft = getDraftFor(p.id, dk, p.schedule[dk].exercises);
+        const nextVal = !draft[exId][sIdx].done;
+        draft[exId][sIdx].done = nextVal;
+        renderApp();
+      },
+
+      saveWorkoutLog(dk) {
+        const p = getActiveProfile();
+        const day = p.schedule[dk];
+        const draft = getDraftFor(p.id, dk, day.exercises);
+        const date = document.getElementById('workout-date-input')?.value || getTodayISO();
+
+        const exercises = (day.exercises || []).map(ex => ({
+          id: ex.id,
+          name: ex.name,
+          sets: (draft[ex.id] || []).slice(0, Number(ex.sets || 3)).map(s => ({ ...s }))
+        }));
+
+        if (!exercises.some(e => e.sets.some(s => s.done || s.reps || s.load))) {
+          showToast('Preencha pelo menos uma série antes de salvar.', 'warning');
+          return;
+        }
+
+        if (!p.workoutLogs) p.workoutLogs = [];
+        p.workoutLogs.push({ id: 'wl_' + Date.now(), date, dayKey: dk, title: day.title, exercises });
+        Object.values(draft).forEach(arr => arr.forEach(s => { s.done = false; }));
+        saveState();
+        showToast('Treino finalizado e salvo! Confira na aba Evolução.', 'success');
+        renderApp();
+      },
+
+      saveSportLog(e) {
+        e.preventDefault();
+        const p = getActiveProfile();
+        const day = p.schedule[ui.selectedDay];
+        if (!p.sportLogs) p.sportLogs = [];
+        p.sportLogs.push({
+          id: 'sp_' + Date.now(),
+          date: document.getElementById('sport-date').value || getTodayISO(),
+          sport: day.subtype || day.title || 'Esporte',
+          duration: document.getElementById('sport-duration').value.trim(),
+          distance: document.getElementById('sport-distance').value.trim(),
+          intensity: document.getElementById('sport-intensity').value,
+          notes: document.getElementById('sport-notes').value.trim()
+        });
+        saveState();
+        showToast('Sessão de esporte registrada!', 'success');
+        renderApp();
+      },
+
+      startTimer(sec) {
+        if (ui.timer.intervalId) clearInterval(ui.timer.intervalId);
+        stopAlarmLoop();
+        ui.timer.secondsLeft = sec;
+        ui.timer.totalSeconds = sec;
+        ui.timer.running = true;
+        ui.timer.intervalId = setInterval(tickTimer, 1000);
+        const minInput = document.getElementById('timer-custom-min');
+        const secInput = document.getElementById('timer-custom-sec');
+        if (minInput) minInput.value = Math.floor(sec / 60);
+        if (secInput) secInput.value = String(sec % 60).padStart(2, '0');
+        updateTimerUI();
+      },
+      applyCustomTimer() {
+        const m = Math.max(0, Math.min(59, parseInt(document.getElementById('timer-custom-min')?.value || '0', 10) || 0));
+        const s = Math.max(0, Math.min(59, parseInt(document.getElementById('timer-custom-sec')?.value || '0', 10) || 0));
+        const total = m * 60 + s;
+        if (total <= 0) {
+          showToast('Defina um tempo maior que 0 segundos.', 'warning');
+          return;
+        }
+        this.startTimer(total);
+      },
+      toggleTimer() {
+        if (ui.timer.alarming) {
+          this.stopAlarmAndReset();
+          return;
+        }
+        if (ui.timer.running) {
+          clearInterval(ui.timer.intervalId);
+          ui.timer.running = false;
+        } else {
+          if (ui.timer.secondsLeft <= 0) ui.timer.secondsLeft = ui.timer.totalSeconds || 90;
+          ui.timer.running = true;
+          ui.timer.intervalId = setInterval(tickTimer, 1000);
+        }
+        updateTimerUI();
+      },
+      resetTimer() {
+        if (ui.timer.intervalId) clearInterval(ui.timer.intervalId);
+        stopAlarmLoop();
+        ui.timer.running = false;
+        ui.timer.secondsLeft = ui.timer.totalSeconds || 90;
+        updateTimerUI();
+      },
+      stopAlarmAndReset() {
+        if (ui.timer.intervalId) clearInterval(ui.timer.intervalId);
+        stopAlarmLoop();
+        ui.timer.running = false;
+        ui.timer.secondsLeft = ui.timer.totalSeconds || 90;
+        updateTimerUI();
+      },
+
+      selectChartExercise(id) {
+        ui.selectedExerciseChartId = id;
+        renderApp();
+      },
+
+      addWeight(e) {
+        e.preventDefault();
+        const p = getActiveProfile();
+        const date = document.getElementById('ev-weight-date').value || getTodayISO();
+        const weight = Number(document.getElementById('ev-weight-val').value);
+        if (!weight) return;
+        if (!p.weights) p.weights = [];
+        p.weights.push({ id: 'w_' + Date.now(), date, weight: Number(weight.toFixed(2)) });
+        saveState();
+        showToast(`Peso ${weight.toFixed(1).replace('.', ',')} kg registrado!`, 'success');
+        renderApp();
+      },
+
+      addMeasurement(e) {
+        e.preventDefault();
+        const p = getActiveProfile();
+        if (!p.measurements) p.measurements = [];
+        const hipEl = document.getElementById('meas-hip');
+        const manualEl = document.getElementById('meas-manual-bf');
+        const armEl = document.getElementById('meas-arm');
+        const chestEl = document.getElementById('meas-chest');
+        const thighEl = document.getElementById('meas-thigh');
+
+        p.measurements.push({
+          id: 'm_' + Date.now(),
+          date: document.getElementById('meas-date').value || getTodayISO(),
+          waist: Number(document.getElementById('meas-waist').value),
+          neck: Number(document.getElementById('meas-neck').value),
+          hip: hipEl && hipEl.value ? Number(hipEl.value) : null,
+          arm: armEl && armEl.value ? Number(armEl.value) : null,
+          chest: chestEl && chestEl.value ? Number(chestEl.value) : null,
+          thigh: thighEl && thighEl.value ? Number(thighEl.value) : null,
+          manualBf: manualEl && manualEl.value ? Number(manualEl.value) : null
+        });
+        saveState();
+        showToast('Medidas e % de gordura atualizados!', 'success');
+        renderApp();
+      },
+
+      setDietSubTab(sub) { ui.dietSubTab = sub; renderApp(); },
+      changeDietDate(d) { if (d) { ui.selectedDietDate = d; renderApp(); } },
+
+      adjustKcalTarget(delta) {
+        const p = getActiveProfile();
+        p.kcalTarget = Math.max(1200, Number(p.kcalTarget || 2500) + delta);
+        saveState();
+        showToast(`Meta: ${p.kcalTarget} kcal/dia`, 'success');
+        renderApp();
+      },
+
+      toggleMeal(mealId) {
+        const p = getActiveProfile();
+        if (!p.dietLogs) p.dietLogs = {};
+        if (!p.dietLogs[ui.selectedDietDate]) p.dietLogs[ui.selectedDietDate] = { checked: [], extras: [] };
+        const arr = p.dietLogs[ui.selectedDietDate].checked;
+        const i = arr.indexOf(mealId);
+        if (i >= 0) arr.splice(i, 1); else arr.push(mealId);
+        saveState();
+        renderApp();
+      },
+
+      deleteMeal(mealId) {
+        const p = getActiveProfile();
+        p.meals = (p.meals || []).filter(m => m.id !== mealId);
+        saveState();
+        renderApp();
+      },
+
+      addDietExtra(e) {
+        e.preventDefault();
+        const p = getActiveProfile();
+        if (!p.dietLogs) p.dietLogs = {};
+        if (!p.dietLogs[ui.selectedDietDate]) p.dietLogs[ui.selectedDietDate] = { checked: [], extras: [] };
+        p.dietLogs[ui.selectedDietDate].extras.push({
+          id: 'ex_' + Date.now(),
+          name: document.getElementById('diet-extra-name').value.trim(),
+          kcal: Number(document.getElementById('diet-extra-kcal').value) || 0,
+          protein: Number(document.getElementById('diet-extra-prot').value) || 0
+        });
+        saveState();
+        showToast('Extra adicionado!', 'success');
+        renderApp();
+      },
+
+      removeDietExtra(id) {
+        const p = getActiveProfile();
+        const log = p.dietLogs?.[ui.selectedDietDate];
+        if (log) {
+          log.extras = (log.extras || []).filter(x => x.id !== id);
+          saveState();
+          renderApp();
+        }
+      },
+
+      addProteinFood(e) {
+        e.preventDefault();
+        const p = getActiveProfile();
+        if (!p.proteinFoods) p.proteinFoods = [];
+        p.proteinFoods.push({
+          id: 'pf_' + Date.now(),
+          name: document.getElementById('pf-name').value.trim(),
+          price: Number(document.getElementById('pf-price').value),
+          packWeight: Number(document.getElementById('pf-weight').value),
+          protPer100: Number(document.getElementById('pf-prot').value)
+        });
+        saveState();
+        showToast('Alimento adicionado!', 'success');
+        renderApp();
+      },
+
+      removeProteinFood(id) {
+        const p = getActiveProfile();
+        p.proteinFoods = (p.proteinFoods || []).filter(x => x.id !== id);
+        saveState();
+        renderApp();
+      },
+
+      exportBackup() {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `manufit-clube-backup-${getTodayISO()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('Backup JSON baixado!', 'success');
+      },
+
+      handleImportFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (!Array.isArray(parsed.profiles)) throw new Error();
+            state = parsed;
+            saveState();
+            showToast('Backup importado com sucesso!', 'success');
+            renderApp();
+          } catch {
+            showToast('Arquivo JSON inválido.', 'error');
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+      }
+    };
+
+    /* ==========================================================================
+       15. INICIALIZAÇÃO
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+      applyTheme(savedTheme);
+      renderApp();
+    });
+  </script>
+</body>
+</html>
